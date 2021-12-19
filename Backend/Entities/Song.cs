@@ -1,0 +1,48 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Backend.Entities
+{
+    public class Song
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+
+        public List<Event> Events { get; set; }
+        public List<Artist> Artists { get; set; }
+
+        public int PrimaryArtistId { get; set; }
+        public Artist PrimaryArtist { get; set; }
+
+
+
+        public string ArtistsString => Artists?.Select(a => a.ToString()).Aggregate((a1, a2) => $"{a1} & {a2}");
+        public override string ToString()
+        {
+            var artistString = Artists?.Select(a => a.ToString()).Aggregate((a1, a2) => $"{a1} & {a2}");
+            return $"{Name}, {artistString}";
+        }
+        public override bool Equals(object obj)
+        {
+            if (obj is not Song other)
+                return false;
+
+            if (Name == other.Name &&
+                Artists != null &&
+                Artists.All(a => other.Artists.Contains(a)) &&
+                other.Artists.All(a => Artists.Contains(a)))
+                return true;
+
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            throw new NotImplementedException();
+        }
+    }
+}

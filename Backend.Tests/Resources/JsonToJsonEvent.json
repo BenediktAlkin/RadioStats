@@ -1,0 +1,20 @@
+﻿[
+  {
+    "Status": "Played",
+    "Id": "97318201",
+    "SongName": "A dios le pido",
+    "Artist": "Juanes",
+    "Time": "2021-12-19T18:22:27+0100",
+    "Length": 204,
+    "Cover": "http:\/\/oe3meta.orf.at\/oe3mdata\/Pictures\/200\/103493_001.jpg"
+  },
+  {
+    "Status": "Played",
+    "Id": "99551010",
+    "SongName": "Der letzte Schnee",
+    "Artist": "Seiler und Speer",
+    "Time": "2021-12-19T18:11:16+0100",
+    "Length": 302,
+    "Cover": "http:\/\/oe3meta.orf.at\/oe3mdata\/Pictures\/200\/102901_001.jpg"
+  }
+]
