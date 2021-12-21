@@ -1,0 +1,4 @@
+﻿SmtpHost: smtp.gmail.com
+Port: 587
+SenderEmail: someemail@gmail.com
+SenderPassword: password

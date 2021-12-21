@@ -42,10 +42,9 @@ namespace Backend.Tests
         }
 
         [Test]
-        public void UpdateDatabase()
+        public void UpdateDatabase_DoesNotThrowError()
         {
             DatabaseOperations.UpdateDb(Downloader.FIRST_DATE_WITH_DATA + TimeSpan.FromMinutes(5));
-            // TODO
         }
     }
 }
