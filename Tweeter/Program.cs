@@ -13,8 +13,8 @@ namespace Tweeter
 {
     public class Program
     {
-        private static readonly TimeSpan TWEET_TIME = default;//new(23, 22, 00);
-        private static readonly TimeSpan TWEET_TIME_DELTA = new(00, 00, 10);
+        private static readonly TimeSpan TWEET_TIME = new(18, 00, 00);
+        private static readonly TimeSpan TWEET_TIME_DELTA = new(24, 00, 00);
 
         public static async Task Main()
         {

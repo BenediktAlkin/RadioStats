@@ -4,9 +4,9 @@ using System;
 
 namespace Runner
 {
-    class Program
+    public class Program
     {
-        static void Main()
+        public static void Main()
         {
             Log.Logger = new LoggerConfiguration()
                 .WriteTo.Console()
