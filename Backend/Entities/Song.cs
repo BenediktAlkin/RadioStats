@@ -24,25 +24,7 @@ namespace Backend.Entities
         public override string ToString()
         {
             var artistString = Artists?.Select(a => a.ToString()).Aggregate((a1, a2) => $"{a1} & {a2}");
-            return $"{Name}, {artistString}";
-        }
-        public override bool Equals(object obj)
-        {
-            if (obj is not Song other)
-                return false;
-
-            if (Name == other.Name &&
-                Artists != null &&
-                Artists.All(a => other.Artists.Contains(a)) &&
-                other.Artists.All(a => Artists.Contains(a)))
-                return true;
-
-            return false;
-        }
-
-        public override int GetHashCode()
-        {
-            throw new NotImplementedException();
+            return $"{Name} - {artistString}";
         }
     }
 }

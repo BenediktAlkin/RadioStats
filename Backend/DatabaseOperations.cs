@@ -13,26 +13,22 @@ namespace Backend
     {
         public static void UpdateDb(DateTime? till=null)
         {
-            using var db = new DatabaseContext();
             var latestDate = GetLatestEventDateTime();
             var from = new DateTime(latestDate.Year, latestDate.Month, latestDate.Day);
             if(till == null)
                 till = DateTime.Now;
-            Log.Information($"updating database (from={Util.DateTimeToString(from)} till={Util.DateTimeToString(till.Value)})");
+            Log.Information($"updating database (from={from} till={till.Value})");
 
-            while (from < till && from < DateTime.Now)
+            var curTime = from;
+            while (curTime < till && curTime < DateTime.Now)
             {
-                from = from.AddDays(1);
-                Log.Information($"downloading events from {Util.DateTimeToString(from)}");
-                var result = Downloader.DownloadFromTill(latestDate, from);
-                Log.Information($"downloaded {result.Count} new events");
-                JsonImporter.ImportIncremential(db, result);
-                Log.Information($"imported {result.Count} new events");
-                latestDate = new DateTime(from.Year, from.Month, from.Day);
+                var jsonEvents = Downloader.DownloadJsonEvents(curTime);
+                JsonImporter.ImportJsonEvents(jsonEvents);
+                curTime = GetLatestEventDateTime();
+                Log.Information($"updated database till {curTime}");
             }
 
-            var newLatestDate = GetLatestEventDateTime();
-            Log.Information($"updated database (latest event was on {Util.DateTimeToString(newLatestDate)}");
+            Log.Information($"updated database (latest event was on {curTime}");
         }
 
 
@@ -46,7 +42,7 @@ namespace Backend
             if (latestStartTimeUnix != null)
                 return Util.UnixTimestampToDateTime(latestStartTimeUnix.Value);
             else
-                return DateTime.Now;
+                return Downloader.FIRST_DATE_WITH_DATA;
         }
     }
 }

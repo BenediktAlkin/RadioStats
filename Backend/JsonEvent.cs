@@ -9,7 +9,6 @@ namespace Backend
 
     public class JsonEvent
     {
-        public int Id { get; set; }
         public string SongName { get; set; }
         public string Artist { get; set; }
         public DateTime Time { get; set; }

@@ -15,6 +15,7 @@ namespace Backend.Tests
         {
             Log.Logger = new LoggerConfiguration()
                 .WriteTo.Console()
+                .WriteTo.File("tests.log")
                 .CreateLogger();
         }
         [TearDown]

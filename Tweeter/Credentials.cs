@@ -8,9 +8,13 @@ namespace Tweeter
 {
     public class Credentials
     {
+        public string ApiKey { get; set; }
+        public string ApiKeySecret { get; set; }
+
         public string AccessToken { get; set; }
         public string AccessTokenSecret { get; set; }
-        public string ConsumerKey { get; set; }
-        public string ConsumerSecret { get; set; }
+
+        public string ConsumerKey => ApiKey;
+        public string ConsumerSecret => ApiKeySecret;
     }
 }

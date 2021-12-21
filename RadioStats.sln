@@ -5,9 +5,11 @@ VisualStudioVersion = 16.0.31729.503
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Backend", "Backend\Backend.csproj", "{2AD7151C-10A8-4ED7-A906-A20FF3BA5AA6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Backend.Tests", "Backend.Tests\Backend.Tests.csproj", "{1DFD5F4F-4E4D-4E3D-B680-E64C7F425E7D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Backend.Tests", "Backend.Tests\Backend.Tests.csproj", "{1DFD5F4F-4E4D-4E3D-B680-E64C7F425E7D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tweeter", "Tweeter\Tweeter.csproj", "{EC46FF6B-4D0E-4C53-9060-D6AD62F6D398}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tweeter", "Tweeter\Tweeter.csproj", "{EC46FF6B-4D0E-4C53-9060-D6AD62F6D398}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Runner", "Runner\Runner.csproj", "{D7F498BA-7057-4B6F-B281-7CE7577AAF47}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +29,10 @@ Global
 		{EC46FF6B-4D0E-4C53-9060-D6AD62F6D398}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EC46FF6B-4D0E-4C53-9060-D6AD62F6D398}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EC46FF6B-4D0E-4C53-9060-D6AD62F6D398}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D7F498BA-7057-4B6F-B281-7CE7577AAF47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D7F498BA-7057-4B6F-B281-7CE7577AAF47}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D7F498BA-7057-4B6F-B281-7CE7577AAF47}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D7F498BA-7057-4B6F-B281-7CE7577AAF47}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

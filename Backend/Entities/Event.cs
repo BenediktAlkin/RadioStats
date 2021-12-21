@@ -23,10 +23,7 @@ namespace Backend.Entities
             var songString = "" + SongId;
             if (Song != null)
                 songString = Song.Name;
-            return $"{Util.DateTimeToString(Util.UnixTimestampToDateTime(StartTimeUnix))}, {songString}, {Duration}";
+            return $"{Util.UnixTimestampToDateTime(StartTimeUnix)} {songString} - {Duration}";
         }
-
-        public string TimeString => Util.DateTimeToString(Util.UnixTimestampToDateTime(StartTimeUnix));
-        public string DurationString => TimeSpan.FromSeconds(Duration).ToString(@"mm\:ss");
     }
 }

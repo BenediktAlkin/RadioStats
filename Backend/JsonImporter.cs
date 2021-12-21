@@ -10,117 +10,103 @@ namespace Backend
 {
     public static class JsonImporter
     {
-        public static void ImportIncremential(DatabaseContext db, List<JsonEvent> events)
+        public static void ImportJsonEvents(List<JsonEvent> events)
         {
-            if (events.Count == 0) return;
+            if (events == null) return;
 
             UnifyJsonEvents(events);
-            ImportEventsToDb(db, events);
+            ImportEventsToDb(events);
         }
 
 
-        private static void UnifyJsonEvents(List<JsonEvent> list)
+        private static void UnifyJsonEvents(List<JsonEvent> jsonEvents)
         {
-            Log.Information("Unifying JsonArtists");
-            for (var i = 0; i < list.Count; i++)
+            Log.Information($"unifying {jsonEvents.Count} JsonEvents");
+            foreach (var jsonEvent in jsonEvents)
             {
-                var artist = list[i].Artist;
-                foreach (var key in Constants.FEAT_VARIATIONS.Keys)
+                var artistsString = jsonEvent.Artist;
+                var wasChanged = false;
+                // replace all FEAT_VARIATIONS with FEAT_STRING
+                foreach (var key in Constants.FEAT_VARIATIONS)
                 {
-                    if (artist.Contains(key))
-                        artist = artist.Replace(key, Constants.FEAT_VARIATIONS[key]);
-                }
-                list[i].Artist = artist;
-                if ((i + 1) % 100 == 0)
-                    Log.Information($"Unified {i}/{list.Count} Artists");
-            }
-            Log.Information("Finished Unifying JsonArtists");
-        }
-
-        private static void ImportEventsToDb(DatabaseContext db, List<JsonEvent> events)
-        {
-            // TODO this method can be made much more efficient
-            var artists = new Dictionary<string, Artist>();
-            var songs = new List<Song>();
-            var evts = new List<Event>();
-
-            Log.Information("prepare insert artists");
-            foreach(var group in events.GroupBy(e => e.Artist).ToList())
-            {
-                var artist = new Artist()
-                {
-                    Name = group.Key,
-                    Songs = new List<Song>()
-                };
-
-                if (artist.CouldBeMultipleArtists)
-                {
-                    foreach (var subArtist in artist.ExtractArtists())
+                    if (artistsString.Contains(key))
                     {
-                        if (!artists.ContainsKey(subArtist.Name))
-                            artists[subArtist.Name] = subArtist;
+                        artistsString = artistsString.Replace(key, Constants.FEAT_STRING);
+                        wasChanged = true;
                     }
                 }
-                else
-                    artists[group.Key] = artist;
-            }
-
-
-            Log.Information("prepare insert songs");
-            foreach(var group in events.GroupBy(e => new { e.Artist, e.SongName }).ToList())
-            {
-                var list = new List<Artist>();
-                var tempArtist = new Artist() { Name = group.Key.Artist };
-                if (tempArtist.CouldBeMultipleArtists)
+                if (wasChanged)
                 {
-                    foreach (var subArtist in tempArtist.ExtractArtists())
-                        list.Add(artists[subArtist.Name]);
+                    Log.Information($"changed ArtistsString from \"{jsonEvent.Artist}\" to \"{artistsString}\"");
+                    jsonEvent.Artist = artistsString;
                 }
-                else
-                    list.Add(artists[group.Key.Artist]);
-
-                var song = new Song()
-                {
-                    Artists = list,
-                    PrimaryArtist = list.First(),
-                    Name = group.Key.SongName,
-                    Events = new List<Event>()
-                };
-
-                songs.Add(song);
-                foreach(var artist in song.Artists)
-                    artist.Songs.Add(song);
             }
+        }
 
 
-            Log.Information($"prepare insert events (count={events.Count})");
-            events = events.OrderBy(e => e.Time).ToList();
-            Event prevEvt = null;
-            for (int i = 0; i < events.Count; i++)
+        private static void ImportEventsToDb(List<JsonEvent> jsonEvents)
+        {
+            using var db = new DatabaseContext();
+
+
+            foreach(var jsonEvent in jsonEvents)
             {
-                var e = events[i];
-                var evtSongs = songs.First(s => s.Name == e.SongName && s.ArtistsString == e.Artist);
-                var evt = new Event()
+                // extract multiple ArtistNames from single ArtistsString
+                List<string> artistStrings;
+                if (jsonEvent.Artist.Contains(Constants.FEAT_STRING))
+                    artistStrings = jsonEvent.Artist
+                        .Split(new string[] { Constants.FEAT_STRING }, StringSplitOptions.RemoveEmptyEntries)
+                        .ToList();
+                else
+                    artistStrings = new List<string> { jsonEvent.Artist };
+                
+                // insert new Artists and/or find existing ones
+                var dbArtists = new List<Artist>();
+                foreach(var artistName in artistStrings)
                 {
-                    Duration = e.Length,
-                    Song = evtSongs,
-                    StartTimeUnix = Util.UnixTimestamp(e.Time),
-                };
-                if (prevEvt != null && prevEvt.StartTimeUnix == evt.StartTimeUnix)
-                    continue;
-                evt.Song.Events.Add(evt);
-                evts.Add(evt);
+                    var dbArtist = db.Artists.FirstOrDefault(a => a.Name == artistName);
+                    if (dbArtist == null)
+                    {
+                        dbArtist = new Artist { Name = artistName };
+                        db.Artists.Add(dbArtist);
+                        db.SaveChanges();
+                        Log.Information($"inserted artist \"{artistName}\"");
+                    }
+                    dbArtists.Add(dbArtist);
+                }
+                var primaryArtist = dbArtists[0];
 
-                prevEvt = evt;
+                // insert new Song or find existing one
+                var dbSong = db.Songs.FirstOrDefault(s => s.Name == jsonEvent.SongName && s.PrimaryArtistId == primaryArtist.Id);
+                if (dbSong == null)
+                {
+                    dbSong = new Song()
+                    {
+                        Artists = dbArtists,
+                        PrimaryArtist = primaryArtist,
+                        Name = jsonEvent.SongName,
+                    };
+                    db.Songs.Add(dbSong);
+                    db.SaveChanges();
+                    Log.Information($"inserted song \"{dbSong}\"");
+                }
+
+                // insert event or find existing one
+                var eventTimeUnix = Util.UnixTimestamp(jsonEvent.Time);
+                var dbEvent = db.Events.FirstOrDefault(e => e.StartTimeUnix == eventTimeUnix);
+                if(dbEvent == null)
+                {
+                    dbEvent = new Event()
+                    {
+                        Duration = jsonEvent.Length,
+                        Song = dbSong,
+                        StartTimeUnix = eventTimeUnix,
+                    };
+                    db.Events.Add(dbEvent);
+                    db.SaveChanges();
+                    Log.Information($"inserted event {dbEvent}");
+                }
             }
-
-            Log.Information($"saving changes");
-            var artistlist = artists.Values.ToList();
-            db.Artists.AddRange(artistlist);
-            db.Songs.AddRange(songs);
-            db.Events.AddRange(evts);
-            db.SaveChanges();
-            Log.Information("finished db update");
         }
     }
 }

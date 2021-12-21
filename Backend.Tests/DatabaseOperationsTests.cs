@@ -10,10 +10,19 @@ namespace Backend.Tests
 {
     public class DatabaseOperationsTests : BaseTests
     {
+        [SetUp]
+        public override void SetUp()
+        {
+            base.SetUp();
+
+            // drop db
+            using var db = new DatabaseContext(dropDb: true);
+        }
+
         [Test]
         public void GetLatestEventDateTime()
         {
-            using var db = new DatabaseContext(dropDb: true);
+            using var db = new DatabaseContext();
 
             var datetime = DateTime.Now - TimeSpan.FromSeconds(10);
             db.Events.Add(new Event
@@ -35,23 +44,7 @@ namespace Backend.Tests
         [Test]
         public void UpdateDatabase()
         {
-            // drop db
-            using var db = new DatabaseContext(dropDb: true);
-            // insert dummy event at from time
-            var from = new DateTime(2021, 11, 18, 18, 15, 00);
-            db.Events.Add(new()
-            {
-                StartTimeUnix = Backend.Util.UnixTimestamp(from),
-                Song = new()
-                {
-                    PrimaryArtist = new Artist(),
-                },
-            });
-            db.SaveChanges();
-
-
-            var duration = TimeSpan.FromMinutes(5);
-            DatabaseOperations.UpdateDb(from + duration);
+            DatabaseOperations.UpdateDb(Downloader.FIRST_DATE_WITH_DATA + TimeSpan.FromMinutes(5));
             // TODO
         }
     }

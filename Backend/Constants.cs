@@ -8,13 +8,14 @@ namespace Backend
 {
     public static class Constants
     {
-        public static readonly Dictionary<string, string> FEAT_VARIATIONS = new()
+        public const string FEAT_STRING = " & ";
+        public static readonly List<string> FEAT_VARIATIONS = new()
         {
-            { " feat ", " & " },
-            { " Feat ", " & " },
-            { " Feat. ", " & " },
-            { " feat. ", " & " },
-            { " . ", " & " },
+            " feat ",
+            " Feat ",
+            " Feat. ",
+            " feat. ",
+            " . ",
         };
     }
 }

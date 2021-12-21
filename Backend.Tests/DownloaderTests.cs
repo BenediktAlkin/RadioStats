@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 
@@ -19,27 +20,16 @@ namespace Backend.Tests
             Assert.AreEqual(expected, json);
         }
 
-
         [Test]
-        [TestCase("12341A12", "1234112")]
-        public void TidyUpJson(string idValue, string expectedIdValue)
+        [TestCase("2021.12.15 18:00", 12)]
+        public void DownloadJsonEvents(string dateTimeStr, int count)
         {
-            const string JSON_TEMPLATE = "[{{\"Id\":\"{0}\"}}]";
-            var json = string.Format(JSON_TEMPLATE, idValue);
-            var tidyJson = Util.InvokePrivateMethod<string>(typeof(Downloader), "TidyUpJson", json);
-            var expected = string.Format(JSON_TEMPLATE, expectedIdValue);
-            Assert.AreEqual(expected, tidyJson);
+            var dateTime = DateTime.Parse(dateTimeStr);
+            var jsonEvents = Util.InvokePrivateMethod<List<JsonEvent>>(typeof(Downloader), "DownloadJsonEvents", dateTime);
+
+            Assert.AreEqual(count, jsonEvents.Count);
         }
 
-        [Test]
-        public void TidyUpJsonMulti()
-        {
-            var json = File.ReadAllText("Resources/TidyUpJsonMulti_input.json");
-            json = Util.RemoveWhitespaceOutsideQuotes(json);
-            var tidyJson = Util.InvokePrivateMethod<string>(typeof(Downloader), "TidyUpJson", json);
-            var expected = File.ReadAllText("Resources/TidyUpJsonMulti_expected.json");
-            Assert.AreEqual(Util.RemoveWhitespaceOutsideQuotes(expected), Util.RemoveWhitespaceOutsideQuotes(tidyJson));
-        }
 
         [Test]
         public void JsonToJsonEvent()
