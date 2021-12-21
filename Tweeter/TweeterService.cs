@@ -14,9 +14,8 @@ namespace Tweeter
 
     public class TweeterService
     {
-        private static readonly TimeSpan TWEET_INTERVAL = TimeSpan.FromMinutes(1);
+        private static readonly TimeSpan TWEET_INTERVAL = TimeSpan.FromDays(1);
 
-        private TweeterServiceConfig Config { get; set; }
         private TwitterClient Client { get; set; }
 
         public delegate void TweeterServiceErrorEventHandler();
@@ -24,8 +23,6 @@ namespace Tweeter
 
         public TweeterService(TweeterServiceConfig config)
         {
-            Config = config;
-
             // initialize twitter client and check connection
             var client = new TwitterClient(config.ApiKey, config.ApiSecretKey, config.ApiAccessToken, config.ApiAccessTokenSecret);
             var user = client.Users.GetAuthenticatedUserAsync().Result;
