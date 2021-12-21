@@ -51,6 +51,11 @@ namespace Backend
 
             foreach(var jsonEvent in jsonEvents)
             {
+                // try find existing event
+                var eventTimeUnix = Util.UnixTimestamp(jsonEvent.Time);
+                var dbEvent = db.Events.FirstOrDefault(e => e.StartTimeUnix == eventTimeUnix);
+                if (dbEvent != null) continue;
+
                 // extract multiple ArtistNames from single ArtistsString
                 List<string> artistStrings;
                 if (jsonEvent.Artist.Contains(Constants.FEAT_STRING))
@@ -91,21 +96,16 @@ namespace Backend
                     Log.Information($"inserted song \"{dbSong}\"");
                 }
 
-                // insert event or find existing one
-                var eventTimeUnix = Util.UnixTimestamp(jsonEvent.Time);
-                var dbEvent = db.Events.FirstOrDefault(e => e.StartTimeUnix == eventTimeUnix);
-                if(dbEvent == null)
+                // insert event
+                dbEvent = new Event()
                 {
-                    dbEvent = new Event()
-                    {
-                        Duration = jsonEvent.Length,
-                        Song = dbSong,
-                        StartTimeUnix = eventTimeUnix,
-                    };
-                    db.Events.Add(dbEvent);
-                    db.SaveChanges();
-                    Log.Information($"inserted event {dbEvent}");
-                }
+                    Duration = jsonEvent.Length,
+                    Song = dbSong,
+                    StartTimeUnix = eventTimeUnix,
+                };
+                db.Events.Add(dbEvent);
+                db.SaveChanges();
+                Log.Information($"inserted event {dbEvent}");
             }
         }
     }
