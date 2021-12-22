@@ -11,7 +11,7 @@ env:
   build_config: Release
 
 jobs:
-  update_version_in_source:
+  publish_program:
     runs-on: windows-latest
 
     steps:
