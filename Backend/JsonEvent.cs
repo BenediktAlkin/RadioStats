@@ -13,5 +13,7 @@ namespace Backend
         public string Artist { get; set; }
         public DateTime Time { get; set; }
         public int Length { get; set; }
+
+        public override string ToString() => $"{Time} {SongName} - {Artist}";
     }
 }

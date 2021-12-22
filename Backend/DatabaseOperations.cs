@@ -11,10 +11,13 @@ namespace Backend
 {
     public static class DatabaseOperations
     {
-        public static void UpdateDb(DateTime? till=null)
+        public static void UpdateDb(DateTime? from=null, DateTime? till=null)
         {
-            var latestDate = GetLatestEventDateTime();
-            var from = new DateTime(latestDate.Year, latestDate.Month, latestDate.Day);
+            if(from == null)
+            {
+                var latestDate = GetLatestEventDateTime();
+                from = new DateTime(latestDate.Year, latestDate.Month, latestDate.Day);
+            }
             if(till == null)
                 till = DateTime.Now;
             Log.Information($"updating database (from={from} till={till.Value})");
@@ -22,10 +25,14 @@ namespace Backend
             var curTime = from;
             while (curTime < till && curTime < DateTime.Now)
             {
-                var jsonEvents = Downloader.DownloadJsonEvents(curTime);
-                JsonImporter.ImportJsonEvents(jsonEvents);
-                curTime = GetLatestEventDateTime();
+                var jsonEvents = Downloader.DownloadJsonEvents(curTime.Value);
+                JsonImporter.ImportJsonEvents(jsonEvents, till.Value);
+                var newLatestDate = GetLatestEventDateTime();
+                if (newLatestDate == curTime)
+                    break;
+                curTime = newLatestDate;
                 Log.Information($"updated database till {curTime}");
+
             }
 
             Log.Information($"updated database (latest event was on {curTime}");

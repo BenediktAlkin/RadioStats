@@ -5,7 +5,13 @@ using System.Net.Mail;
 
 namespace Tweeter
 {
-    public record MailerServiceConfig(string SmtpHost, int Port, string SenderEmail, string SenderPassword);
+    public record MailerServiceConfig
+    {
+        public string SmtpHost { get; set; }
+        public int Port { get; set; }
+        public string SenderEmail { get; set; }
+        public string SenderPassword { get; set; }
+    }
 
     public class MailerService
     {
@@ -15,7 +21,7 @@ namespace Tweeter
             Config = config;
         }
 
-        public void SendErrorMail(string targetEmail, string subject, string message)
+        public void SendMail(string targetEmail, string subject, string message)
         {
             using var smtpClient = new SmtpClient
             {
@@ -35,6 +41,7 @@ namespace Tweeter
             try
             {
                 smtpClient.Send(mail);
+                Log.Information($"sent email from {Config.SenderEmail} to {targetEmail}: {message}");
             }
             catch (Exception e)
             {

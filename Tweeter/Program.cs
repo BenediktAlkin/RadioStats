@@ -12,7 +12,13 @@ using YamlDotNet.Serialization;
 
 namespace Tweeter
 {
-    public record Config(string TargetEmail, TimeSpan TweetTime);
+    public class Config
+    {
+        public string TargetEmail { get; set; }
+        public TimeSpan TweetTime { get; set; }
+
+        public bool IsTestRun { get; set; }
+    }
 
     public class Program
     {
@@ -37,7 +43,27 @@ namespace Tweeter
             // setup program
             var configYaml = File.ReadAllText("config.yaml");
             var config = deserializer.Deserialize<Config>(configYaml);
-            tweeter.OnError += () => mailer.SendErrorMail(config.TargetEmail, "Ö3RadioStats Error", "Encountered error in Ö3RadioStats");
+            tweeter.OnError += () => mailer.SendMail(config.TargetEmail, "Ö3RadioStats Error", "Encountered error in Ö3RadioStats");
+
+            // do test run if specified
+            if (config.IsTestRun)
+            {
+                // test credentials for mailer & twitter
+                mailer.SendMail(config.TargetEmail, "Ö3RadioStats Test", "Test");
+                try
+                {
+                    // test tweet (duplicates are blocked)
+                    await tweeter.Tweet($"TestTweet {Guid.NewGuid()}");
+                    Task.Delay(1000).Wait();
+                }
+                catch (Exception e)
+                {
+                    Log.Error($"failed to tweet {Environment.NewLine}{e.Message}");
+                    Task.Delay(1000).Wait();
+                }
+                
+                return;
+            }
 
 
             // start program

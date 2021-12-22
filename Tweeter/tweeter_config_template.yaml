@@ -1,4 +1,4 @@
 ﻿ApiKey: ASDF
 ApiKeySecret: ASDF
-AccessToken: 1234-ASDF
-AccessTokenSecret: ASDF
+ApiAccessToken: 1234-ASDF
+ApiAccessTokenSecret: ASDF

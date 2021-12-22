@@ -10,11 +10,18 @@ using Tweetinvi;
 
 namespace Tweeter
 {
-    public record TweeterServiceConfig(string ApiKey, string ApiSecretKey, string ApiAccessToken, string ApiAccessTokenSecret);
+    public record TweeterServiceConfig
+    {
+        public string ApiKey { get; set; }
+        public string ApiKeySecret { get; set; }
+        public string ApiAccessToken { get; set; }
+        public string ApiAccessTokenSecret { get; set; }
+    }
 
     public class TweeterService
     {
         private static readonly TimeSpan TWEET_INTERVAL = TimeSpan.FromDays(1);
+        private const int TWEET_MAX_CHARS = 280;
 
         private TwitterClient Client { get; set; }
 
@@ -24,11 +31,15 @@ namespace Tweeter
         public TweeterService(TweeterServiceConfig config)
         {
             // initialize twitter client and check connection
-            var client = new TwitterClient(config.ApiKey, config.ApiSecretKey, config.ApiAccessToken, config.ApiAccessTokenSecret);
-            var user = client.Users.GetAuthenticatedUserAsync().Result;
+            Client = new TwitterClient(config.ApiKey, config.ApiKeySecret, config.ApiAccessToken, config.ApiAccessTokenSecret);
+            var user = Client.Users.GetAuthenticatedUserAsync().Result;
             Log.Information($"authenticated as {user.Name}");
         }
 
+        public async Task Tweet(string message)
+        {
+            await Client.Tweets.PublishTweetAsync(message);
+        }
 
         public async Task Start(TimeSpan tweetTime)
         {
@@ -63,15 +74,41 @@ namespace Tweeter
                 DatabaseOperations.UpdateDb();
 
                 Log.Information("retrieving stats");
-                var now = DateTime.Now;
-                var mostPlayedSongs = Statistics.GetMostPlayedSongs(now.AddDays(-1), now, 5);
-                var tweetStrings = mostPlayedSongs.Select(songCount => $"{songCount.Count}x {songCount.Object}");
-                var tweetString = string.Join('\n', tweetStrings);
+                var to = DateTime.Now;
+                var from = to.AddDays(-1);
+                var totalSongCount = Statistics.TotalSongCount(from, to);
+                var totalSongMinutes = Statistics.TotalSongMinutes(from, to);
+                var uniqueSongCount = Statistics.UniqueSongCount(from, to);
+                var uniqueSongRatio = (int)Math.Round((double)uniqueSongCount / totalSongCount);
+                var mostPlayedSongs = Statistics.GetMostPlayedSongs(from, to, 5);
+                var tweetStrings = mostPlayedSongs.Select((song, count) => $"{count}x {song}").ToList();
 
+                var sb = new StringBuilder();
+                // do this to avoid duplicates (duplicates are forbidden)
+                sb.Append($"{to:MM.dd}\n");
+                sb.Append($"{totalSongCount} gespielte Songs ({totalSongMinutes} Minuten)\n");
+                sb.Append($"{uniqueSongCount} einzigartige Songs ({uniqueSongRatio}%)\n");
+                sb.Append($"Toptracks:");
+                var i = 0;
+                while (i < tweetStrings.Count)
+                {
+                    var curString = tweetStrings[i];
+                    if (sb.Length + curString.Length < TWEET_MAX_CHARS)
+                    {
+                        sb.Append('\n');
+                        sb.Append(curString);
+                        i++;
+                    }
+                    else
+                        break;
+                }
 
-                var tweet = await Client.Tweets.PublishTweetAsync(tweetString);
+                
+
+                var tweet = await Client.Tweets.PublishTweetAsync(sb.ToString());
                 Log.Information($"published tweet: {tweet}");
                 Log.Information($"next tweet time: {DateTime.Now + TWEET_INTERVAL}");
+                OnError();
             }
             catch(Exception e)
             {

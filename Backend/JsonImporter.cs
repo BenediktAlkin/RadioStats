@@ -10,12 +10,12 @@ namespace Backend
 {
     public static class JsonImporter
     {
-        public static void ImportJsonEvents(List<JsonEvent> events)
+        public static void ImportJsonEvents(List<JsonEvent> events, DateTime? till=null)
         {
             if (events == null) return;
 
             UnifyJsonEvents(events);
-            ImportEventsToDb(events);
+            ImportEventsToDb(events, till);
         }
 
 
@@ -44,13 +44,20 @@ namespace Backend
         }
 
 
-        private static void ImportEventsToDb(List<JsonEvent> jsonEvents)
+        private static void ImportEventsToDb(List<JsonEvent> jsonEvents, DateTime? till)
         {
             using var db = new DatabaseContext();
 
 
             foreach(var jsonEvent in jsonEvents)
             {
+                // skip event if it is after till
+                if(till != null && jsonEvent.Time > till)
+                {
+                    Log.Information($"skipping event {jsonEvent} (after {till}");
+                    continue;
+                }
+
                 // try find existing event
                 var eventTimeUnix = Util.UnixTimestamp(jsonEvent.Time);
                 var dbEvent = db.Events.FirstOrDefault(e => e.StartTimeUnix == eventTimeUnix);
