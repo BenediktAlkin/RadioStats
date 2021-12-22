@@ -1,0 +1,42 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+env:
+  main_project_name: Tweeter
+  application_name: RadioStatsTweeter
+  build_config: Release
+
+jobs:
+  update_version_in_source:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    # setup runtime
+    - name: Install .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 5.0.x
+
+    # publish program to {application_name}
+    - name: publish program
+      run: dotnet publish ${{ env.main_project_name }} --configuration ${{ env.build_config }} -o "${{ env.application_name }}" -r linux-x64
+    # zip {application_name} into a zip file where the root folder has name {application_name}
+    - name: zip portable build
+      uses: papeloto/action-zip@v1
+      with:
+        files: "${{ env.application_name }}"
+        dest: "${{ env.application_name }}.zip"
+
+
+    # create empty release
+    - name: create empty release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: "${{ env.application_name }}.zip"

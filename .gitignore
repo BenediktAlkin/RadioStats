@@ -4,9 +4,9 @@
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
 # exclude config files
-*.yaml
+Tweeter/*.yaml
 # but not templates
-!*_template.yaml
+!Tweeter/*_template.yaml
 
 # exclude db files
 *.sqlite
