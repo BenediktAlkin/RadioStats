@@ -32,10 +32,8 @@ namespace Backend
                     break;
                 curTime = newLatestDate;
                 Log.Information($"updated database till {curTime}");
-
             }
-
-            Log.Information($"updated database (latest event was on {curTime}");
+            Log.Information($"updated database (latest event was on {curTime}; till={till}; now={DateTime.Now})");
         }
 
 

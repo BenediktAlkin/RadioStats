@@ -45,6 +45,25 @@ namespace Backend
                 .Sum();
         }
 
+        public static void CreateSongVarietyByHourPlot(DateTime from, DateTime to)
+        {
+            var varietyByHour = SongVarietyByHour(from, to);
+            var plt = new ScottPlot.Plot(600, 400);
+            var labels = varietyByHour.Select(vbh => vbh.Item1.ToString("HH:mm")).ToArray();
+            // take every other element
+            labels = labels.Select((l, i) => i % 3 == 0 ? l : string.Empty).ToArray();
+            plt.XTicks(labels);
+            var values = varietyByHour.Select(vbh => vbh.Item2).ToArray();
+            plt.AddScatter(
+                Enumerable.Range(0, varietyByHour.Count).Select(i => (double)i).ToArray(), 
+                values);
+            plt.Title("Musikvielfalt per Stunde");
+            // set yrange to 0.5, 1.5
+            var ymin = Math.Min(0.5, values.Min());
+            var ymax = Math.Max(1.5, values.Max());
+            plt.SetAxisLimitsY(ymin, ymax);
+            plt.SaveFig("varietyplot.png");
+        }
         public static List<(DateTime, double)> SongVarietyByHour(DateTime from, DateTime to)
         {
             // calculate frequency of song in timeframe

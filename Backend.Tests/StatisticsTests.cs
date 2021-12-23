@@ -41,6 +41,15 @@ namespace Backend.Tests
 
             var variety = Statistics.SongVarietyByHour(from, till);
         }
+        [Test]
+        public void SongDiversityPlot()
+        {
+            var from = new DateTime(2021, 11, 03, 0, 00, 00);
+            var till = from + TimeSpan.FromDays(1);
+            DatabaseOperations.UpdateDb(from, till);
+
+            Statistics.CreateSongVarietyByHourPlot(from, till);
+        }
 
         [Test]
         public void SongCounts()

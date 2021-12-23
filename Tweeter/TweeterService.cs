@@ -79,7 +79,7 @@ namespace Tweeter
                 var totalSongCount = Statistics.TotalSongCount(from, to);
                 var totalSongMinutes = Statistics.TotalSongMinutes(from, to);
                 var uniqueSongCount = Statistics.UniqueSongCount(from, to);
-                var uniqueSongRatio = (int)Math.Round((double)uniqueSongCount / totalSongCount);
+                var uniqueSongRatio = (int)Math.Round((double)uniqueSongCount / Math.Max(1, totalSongCount));
                 var mostPlayedSongs = Statistics.GetMostPlayedSongs(from, to, 5);
                 var tweetStrings = mostPlayedSongs.Select((song, count) => $"{count}x {song}").ToList();
 
@@ -104,11 +104,9 @@ namespace Tweeter
                 }
 
                 
-
                 var tweet = await Client.Tweets.PublishTweetAsync(sb.ToString());
-                Log.Information($"published tweet: {tweet}");
+                Log.Information($"published tweet:{Environment.NewLine}{tweet}");
                 Log.Information($"next tweet time: {DateTime.Now + TWEET_INTERVAL}");
-                OnError();
             }
             catch(Exception e)
             {
