@@ -81,9 +81,12 @@ namespace Backend
 
             if (data == emptyResponse)
             {
-                Log.Error($"received no data statusCode={response.StatusCode} statusDescription={response.StatusDescription} url={url}");
-                return null;
+                if(response.StatusCode == HttpStatusCode.OK)
+                    Log.Information($"received no data (Status=OK) url={url}");
+                else
+                    Log.Error($"received no data statusCode={response.StatusCode} statusDescription={response.StatusDescription} url={url}");
             }
+                
 
             return data;
         }

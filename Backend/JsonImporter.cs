@@ -10,12 +10,12 @@ namespace Backend
 {
     public static class JsonImporter
     {
-        public static void ImportJsonEvents(List<JsonEvent> events, DateTime? till=null)
+        public static int ImportJsonEvents(List<JsonEvent> events, DateTime? till=null)
         {
-            if (events == null) return;
+            if (events == null) return 0;
 
             UnifyJsonEvents(events);
-            ImportEventsToDb(events, till);
+            return ImportEventsToDb(events, till);
         }
 
 
@@ -44,11 +44,11 @@ namespace Backend
         }
 
 
-        private static void ImportEventsToDb(List<JsonEvent> jsonEvents, DateTime? till)
+        private static int ImportEventsToDb(List<JsonEvent> jsonEvents, DateTime? till)
         {
             using var db = new DatabaseContext();
 
-
+            var newEventsCount = 0;
             foreach(var jsonEvent in jsonEvents)
             {
                 // skip event if it is after till
@@ -112,8 +112,11 @@ namespace Backend
                 };
                 db.Events.Add(dbEvent);
                 db.SaveChanges();
+                newEventsCount++;
                 Log.Information($"inserted event {dbEvent}");
             }
+
+            return newEventsCount;
         }
     }
 }

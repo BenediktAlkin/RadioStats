@@ -14,10 +14,7 @@ namespace Backend
         public static void UpdateDb(DateTime? from=null, DateTime? till=null)
         {
             if(from == null)
-            {
-                var latestDate = GetLatestEventDateTime();
-                from = new DateTime(latestDate.Year, latestDate.Month, latestDate.Day);
-            }
+                from = GetLatestEventDateTime();
             if(till == null)
                 till = DateTime.Now;
             Log.Information($"updating database (from={from} till={till.Value})");
@@ -26,14 +23,19 @@ namespace Backend
             while (curTime < till && curTime < DateTime.Now)
             {
                 var jsonEvents = Downloader.DownloadJsonEvents(curTime.Value);
-                JsonImporter.ImportJsonEvents(jsonEvents, till.Value);
-                var newLatestDate = GetLatestEventDateTime();
-                if (newLatestDate == curTime)
-                    break;
-                curTime = newLatestDate;
-                Log.Information($"updated database till {curTime}");
+                var newEventCount = JsonImporter.ImportJsonEvents(jsonEvents, till.Value);
+                if (newEventCount == 0)
+                {
+                    Log.Information($"no new events for {curTime} (adding 30 minutes)");
+                    curTime += TimeSpan.FromMinutes(30);
+                }
+                else
+                {
+                    curTime = GetLatestEventDateTime();
+                    Log.Information($"updated database till {curTime}");
+                }
             }
-            Log.Information($"updated database (latest event was on {curTime}; till={till}; now={DateTime.Now})");
+            Log.Information($"updated database (latest event was on {curTime})");
         }
 
 

@@ -1,6 +1,7 @@
 sudo apt-get install wget
 sudo apt-get install unzip
 sudo apt-get install tmux -y
+
 wget https://github.com/BenediktAlkin/RadioStats/releases/latest/download/RadioStatsTweeter.zip
 unzip RadioStatsTweeter.zip -d RadioStatsTweeter
 cd RadioStatsTweeter
