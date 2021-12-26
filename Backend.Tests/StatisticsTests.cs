@@ -41,7 +41,7 @@ namespace Backend.Tests
             DatabaseOperations.UpdateDb(from, till);
 
             var variety = Statistics.SongVarietyByHour(from, till);
-            var x = 0;
+            // TODO asserts
         }
         [Test]
         public void SongDiversityPlot()
