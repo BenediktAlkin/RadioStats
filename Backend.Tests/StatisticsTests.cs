@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -40,6 +41,7 @@ namespace Backend.Tests
             DatabaseOperations.UpdateDb(from, till);
 
             var variety = Statistics.SongVarietyByHour(from, till);
+            var x = 0;
         }
         [Test]
         public void SongDiversityPlot()
@@ -48,7 +50,19 @@ namespace Backend.Tests
             var till = from + TimeSpan.FromDays(1);
             DatabaseOperations.UpdateDb(from, till);
 
-            Statistics.CreateSongVarietyByHourPlot(from, till);
+            var image = Statistics.GetSongVarietyByHourPlot(from, till);
+            var expected = File.ReadAllBytes("Resources/variety.png");
+            Assert.AreEqual(expected, image);
+        }
+        [Test]
+        public void SongDiversityPlotEmpty()
+        {
+            var from = new DateTime(2021, 11, 03, 0, 00, 00);
+            var till = from + TimeSpan.FromDays(1);
+
+            var image = Statistics.GetSongVarietyByHourPlot(from, till);
+            var expected = File.ReadAllBytes("Resources/no_events_songvariety.png");
+            Assert.AreEqual(expected, image);
         }
 
         [Test]
@@ -61,6 +75,7 @@ namespace Backend.Tests
 
             var uniqueSongCount = Statistics.UniqueSongCount(from, till);
             var totalSongCount = Statistics.TotalSongCount(from, till);
+            // TODO asserts
         }
     }
 }

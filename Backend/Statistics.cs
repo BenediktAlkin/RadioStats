@@ -1,5 +1,6 @@
 ﻿using Backend.Entities;
 using Microsoft.EntityFrameworkCore;
+using ScottPlot;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -45,10 +46,10 @@ namespace Backend
                 .Sum();
         }
 
-        public static void CreateSongVarietyByHourPlot(DateTime from, DateTime to)
+        public static byte[] GetSongVarietyByHourPlot(DateTime from, DateTime to)
         {
             var varietyByHour = SongVarietyByHour(from, to);
-            var plt = new ScottPlot.Plot(600, 400);
+            var plt = new Plot(600, 400);
             var labels = varietyByHour.Select(vbh => vbh.Item1.ToString("HH:mm")).ToArray();
             // take every other element
             labels = labels.Select((l, i) => i % 3 == 0 ? l : string.Empty).ToArray();
@@ -62,7 +63,7 @@ namespace Backend
             var ymin = Math.Min(0.5, values.Min());
             var ymax = Math.Max(1.5, values.Max());
             plt.SetAxisLimitsY(ymin, ymax);
-            plt.SaveFig("varietyplot.png");
+            return plt.GetImageBytes();
         }
         public static List<(DateTime, double)> SongVarietyByHour(DateTime from, DateTime to)
         {
@@ -74,6 +75,15 @@ namespace Backend
             var toUnix = Util.UnixTimestamp(to);
 
             using var db = new DatabaseContext();
+
+            // get all hours in timespan (in case something goes wrong and an hour has no events)
+            var allHours = new List<DateTime>();
+            var curHour = new DateTime(from.Year, from.Month, from.Day, from.Hour, 0, 0);
+            while (curHour < to)
+            {
+                allHours.Add(curHour);
+                curHour += TimeSpan.FromHours(1);
+            }
 
             // get counts
             var eventsInTimeSpan = db.Events.Where(e => fromUnix < e.StartTimeUnix && e.StartTimeUnix < toUnix).ToList();
@@ -88,9 +98,25 @@ namespace Backend
             }).ToDictionary(g => g.Key, g => g.ToList());
 
 
-            var frequencySumByHour = eventsByHour.Select(g => new { Hour = g.Key, FrequencySum = g.Value.Sum(e => frequencyBySongId[e.SongId]) });
+            var frequencySumByHour = eventsByHour
+                .Select(g => new { Hour = g.Key, FrequencySum = g.Value.Sum(e => frequencyBySongId[e.SongId]) })
+                .ToList();
+            // add 0 frequencies for hours without events (in case of error)
+            var hoursWithEvents = eventsByHour.Keys.ToList();
+            foreach(var hour in allHours)
+            {
+                if (!hoursWithEvents.Contains(hour))
+                    frequencySumByHour.Add(new { Hour = hour, FrequencySum = 0 });
+            }
             var averageFrequencySum = frequencySumByHour.Average(fsbh => fsbh.FrequencySum);
-            return frequencySumByHour.Select(fsbh => (fsbh.Hour, fsbh.FrequencySum / averageFrequencySum)).ToList();
+            static double GetVariety(int frequencySum, double averageFrequencySum)
+            {
+                if (frequencySum == 0 || averageFrequencySum == 0) return 1;
+                return frequencySum / averageFrequencySum;
+            }
+            return frequencySumByHour
+                .Select(fsbh => (fsbh.Hour, GetVariety(fsbh.FrequencySum, averageFrequencySum)))
+                .ToList();
         }
 
         public static List<(Song, int)> GetMostPlayedSongs(DateTime from, DateTime to, int count)

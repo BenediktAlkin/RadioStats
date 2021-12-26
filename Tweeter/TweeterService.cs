@@ -1,12 +1,12 @@
 ﻿using Backend;
 using Serilog;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
 using Tweetinvi;
+using Tweetinvi.Parameters;
 
 namespace Tweeter
 {
@@ -34,11 +34,6 @@ namespace Tweeter
             Client = new TwitterClient(config.ApiKey, config.ApiKeySecret, config.ApiAccessToken, config.ApiAccessTokenSecret);
             var user = Client.Users.GetAuthenticatedUserAsync().Result;
             Log.Information($"authenticated as {user.Name}");
-        }
-
-        public async Task Tweet(string message)
-        {
-            await Client.Tweets.PublishTweetAsync(message);
         }
 
         public async Task Start(TimeSpan tweetTime)
@@ -73,47 +68,66 @@ namespace Tweeter
                 Log.Information("updating db");
                 DatabaseOperations.UpdateDb();
 
-                Log.Information("retrieving stats");
-                var to = DateTime.Now;
-                var from = to.AddDays(-1);
-                var totalSongCount = Statistics.TotalSongCount(from, to);
-                var totalSongMinutes = Statistics.TotalSongMinutes(from, to);
-                var uniqueSongCount = Statistics.UniqueSongCount(from, to);
-                var uniqueSongRatio = (int)Math.Round((double)uniqueSongCount / Math.Max(1, totalSongCount));
-                var mostPlayedSongs = Statistics.GetMostPlayedSongs(from, to, 5);
-                var tweetStrings = mostPlayedSongs.Select((song, count) => $"{count}x {song}").ToList();
-
-                var sb = new StringBuilder();
-                // do this to avoid duplicates (duplicates are forbidden)
-                sb.Append($"{to:MM.dd}\n");
-                sb.Append($"{totalSongCount} gespielte Songs ({totalSongMinutes} Minuten)\n");
-                sb.Append($"{uniqueSongCount} einzigartige Songs ({uniqueSongRatio}%)\n");
-                sb.Append($"Toptracks:");
-                var i = 0;
-                while (i < tweetStrings.Count)
-                {
-                    var curString = tweetStrings[i];
-                    if (sb.Length + curString.Length < TWEET_MAX_CHARS)
-                    {
-                        sb.Append('\n');
-                        sb.Append(curString);
-                        i++;
-                    }
-                    else
-                        break;
-                }
-
+                await TweetStatistics(DateTime.Now);
                 
-                var tweet = await Client.Tweets.PublishTweetAsync(sb.ToString());
-                Log.Information($"published tweet:{Environment.NewLine}{tweet}");
                 Log.Information($"next tweet time: {DateTime.Now + TWEET_INTERVAL}");
             }
             catch(Exception e)
             {
-                Log.Error($"failed to UpdateDbAndTweet {e.Message}{Environment.NewLine}{e}");
+                Log.Error($"failed to {nameof(UpdateDbAndTweet)} {e.Message}{Environment.NewLine}{e}");
                 OnError();
                 throw;
             }
+        }
+        public async Task TweetStatistics(DateTime to)
+        {
+            var from = to.AddDays(-1);
+
+            // get tweet picture
+            var image = Statistics.GetSongVarietyByHourPlot(from, to);
+            var uploadedImage = await Client.Upload.UploadTweetImageAsync(image);
+            // get tweet text
+            var tweetString = GetStatisticsText(from, to);
+            // publish tweet
+            var tweet = await Client.Tweets.PublishTweetAsync(new PublishTweetParameters(tweetString)
+            {
+                Medias = { uploadedImage }
+            });
+
+            Log.Information($"published tweet:{Environment.NewLine}{tweet}");
+        }
+        private static string GetStatisticsText(DateTime from, DateTime to)
+        {
+            Log.Information("retrieving stats");
+            var totalSongCount = Statistics.TotalSongCount(from, to);
+            var totalSongMinutes = Statistics.TotalSongMinutes(from, to);
+            var uniqueSongCount = Statistics.UniqueSongCount(from, to);
+            var uniqueSongRatio = (int)Math.Round((double)uniqueSongCount * 100 / Math.Max(1, totalSongCount));
+            var mostPlayedSongs = Statistics.GetMostPlayedSongs(from, to, 10);
+            var tweetStrings = mostPlayedSongs.Select(songCount => $"{songCount.Item2}x {songCount.Item1}").ToList();
+
+            var sb = new StringBuilder();
+            // do this to avoid duplicates (duplicates are forbidden)
+            sb.Append($"{to:MM.dd}\n");
+            sb.Append($"{totalSongCount} gespielte Songs ({totalSongMinutes} Minuten)\n");
+            sb.Append($"{uniqueSongCount} einzigartige Songs ({uniqueSongRatio}%)\n");
+            
+            if (tweetStrings.Count > 0)
+                sb.Append($"Toptracks:");
+            var i = 0;
+            while (i < tweetStrings.Count)
+            {
+                var curString = tweetStrings[i];
+                if (sb.Length + curString.Length < TWEET_MAX_CHARS)
+                {
+                    sb.Append('\n');
+                    sb.Append(curString);
+                    i++;
+                }
+                else
+                    break;
+            }
+            return sb.ToString();
         }
     }
 }

@@ -28,6 +28,7 @@ namespace Tweeter
                 .WriteTo.Console()
                 .WriteTo.File("tweeter.log")
                 .CreateLogger();
+
             var deserializer = new DeserializerBuilder().Build();
 
             // setup mailer
@@ -45,6 +46,7 @@ namespace Tweeter
             var config = deserializer.Deserialize<Config>(configYaml);
             tweeter.OnError += () => mailer.SendMail(config.TargetEmail, "Ö3RadioStats Error", "Encountered error in Ö3RadioStats");
 
+            
             // do test run if specified
             if (config.IsTestRun)
             {
@@ -53,7 +55,9 @@ namespace Tweeter
                 try
                 {
                     // test tweet (duplicates are blocked)
-                    await tweeter.Tweet($"TestTweet {Guid.NewGuid()}");
+                    var range = (int)(DateTime.MaxValue - DateTime.MinValue).TotalDays;
+                    var randomDate = DateTime.MinValue + TimeSpan.FromDays(new Random().Next(0, range));
+                    await tweeter.TweetStatistics(randomDate);
                     Task.Delay(1000).Wait();
                 }
                 catch (Exception e)
