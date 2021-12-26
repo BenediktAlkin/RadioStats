@@ -84,7 +84,7 @@ namespace Tweeter
             var from = to.AddDays(-1);
 
             // get tweet picture
-            var image = Statistics.GetSongVarietyByHourPlot(from, to);
+            var image = Statistics.SongVarietyByHourPlot(from, to);
             var uploadedImage = await Client.Upload.UploadTweetImageAsync(image);
             // get tweet text
             var tweetString = GetStatisticsText(from, to);
@@ -103,7 +103,7 @@ namespace Tweeter
             var totalSongMinutes = Statistics.TotalSongMinutes(from, to);
             var uniqueSongCount = Statistics.UniqueSongCount(from, to);
             var uniqueSongRatio = (int)Math.Round((double)uniqueSongCount * 100 / Math.Max(1, totalSongCount));
-            var mostPlayedSongs = Statistics.GetMostPlayedSongs(from, to, 10);
+            var mostPlayedSongs = Statistics.MostPlayedSongs(from, to, 10);
             var tweetStrings = mostPlayedSongs.Select(songCount => $"{songCount.Item2}x {songCount.Item1}").ToList();
 
             var sb = new StringBuilder();

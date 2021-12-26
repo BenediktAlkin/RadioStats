@@ -27,7 +27,7 @@ namespace Backend.Tests
             var till = from + TimeSpan.FromHours(12);
             DatabaseOperations.UpdateDb(from, till);
 
-            var topKSongCounts = Statistics.GetMostPlayedSongs(from, till, 5);
+            var topKSongCounts = Statistics.MostPlayedSongs(from, till, 5);
             Assert.AreEqual(5, topKSongCounts.Count);
             Assert.AreEqual(2, topKSongCounts[0].Item2);
             Assert.AreEqual(2, topKSongCounts[1].Item2);
@@ -50,7 +50,7 @@ namespace Backend.Tests
             var till = from + TimeSpan.FromDays(1);
             DatabaseOperations.UpdateDb(from, till);
 
-            var image = Statistics.GetSongVarietyByHourPlot(from, till);
+            var image = Statistics.SongVarietyByHourPlot(from, till);
             var expected = File.ReadAllBytes("Resources/variety.png");
             Assert.AreEqual(expected, image);
         }
@@ -60,7 +60,7 @@ namespace Backend.Tests
             var from = new DateTime(2021, 11, 03, 0, 00, 00);
             var till = from + TimeSpan.FromDays(1);
 
-            var image = Statistics.GetSongVarietyByHourPlot(from, till);
+            var image = Statistics.SongVarietyByHourPlot(from, till);
             var expected = File.ReadAllBytes("Resources/no_events_songvariety.png");
             Assert.AreEqual(expected, image);
         }

@@ -46,7 +46,7 @@ namespace Backend
                 .Sum();
         }
 
-        public static byte[] GetSongVarietyByHourPlot(DateTime from, DateTime to)
+        public static byte[] SongVarietyByHourPlot(DateTime from, DateTime to)
         {
             var varietyByHour = SongVarietyByHour(from, to);
             var plt = new Plot(600, 400);
@@ -112,14 +112,15 @@ namespace Backend
             static double GetVariety(int frequencySum, double averageFrequencySum)
             {
                 if (frequencySum == 0 || averageFrequencySum == 0) return 1;
-                return frequencySum / averageFrequencySum;
+                return Math.Clamp(frequencySum / averageFrequencySum, 0, 2);
             }
             return frequencySumByHour
                 .Select(fsbh => (fsbh.Hour, GetVariety(fsbh.FrequencySum, averageFrequencySum)))
+                .OrderBy(hourVariety => hourVariety.Hour)
                 .ToList();
         }
 
-        public static List<(Song, int)> GetMostPlayedSongs(DateTime from, DateTime to, int count)
+        public static List<(Song, int)> MostPlayedSongs(DateTime from, DateTime to, int count)
         {
             var fromUnix = Util.UnixTimestamp(from);
             var toUnix = Util.UnixTimestamp(to);
@@ -134,15 +135,68 @@ namespace Backend
             var topKCounts = counts
                 .OrderByDescending(g => g.Count())
                 .Take(count)
-                .Select(g => new ObjectCount<int>(g.Key, g.Count()))
+                .Select(g => new { SongId = g.Key, Count = g.Count() })
                 .ToList();
-            var songs = db.Songs.Where(s => topKCounts.Select(idCount => idCount.Object).Contains(s.Id)).Include(s => s.Artists).ToList();
+            var songs = db.Songs
+                .Where(s => topKCounts.Select(songCount => songCount.SongId).Contains(s.Id))
+                .Include(s => s.Artists)
+                .ToList();
 
             // match song to count
-            return topKCounts.Select(idCount => (songs.First(s => s.Id == idCount.Object), idCount.Count)).ToList();
+            return topKCounts.Select(songCount => (songs.First(s => s.Id == songCount.SongId), songCount.Count)).ToList();
+        }
+
+        public static byte[] AverageDailySongVarietyByHourPlot(DateTime from, DateTime to)
+        {
+            var varietyByHour = AverageDailySongVarietyByHour(from, to);
+            var plt = new Plot(600, 200);
+            var labels = varietyByHour.Select(vbh => vbh.Item1.ToString("HH:mm")).ToArray();
+            // take every other element
+            labels = labels.Select((l, i) => i % 3 == 0 ? l : string.Empty).ToArray();
+            plt.XTicks(labels);
+            var values = varietyByHour.Select(vbh => vbh.Item2).ToArray();
+            var stds = varietyByHour.Select(vbh => vbh.Item3).ToArray();
+            plt.AddScatter(
+                Enumerable.Range(0, varietyByHour.Count).Select(i => (double)i).ToArray(),
+                values);
+            plt.AddFill(
+                Enumerable.Range(0, varietyByHour.Count).Select(i => (double)i).ToArray(),
+                varietyByHour.Select(vbh => vbh.Item2 - vbh.Item3).ToArray(),
+                varietyByHour.Select(vbh => vbh.Item2 + vbh.Item3).ToArray());
+            plt.Title($"Durchschnittliche Musikvielfalt per Stunde {from.Year}");
+            // set yrange to 0.5, 1.5
+            var ymin = Math.Min(0.5, values.Min());
+            var ymax = Math.Max(1.5, values.Max());
+            plt.SetAxisLimitsY(ymin, ymax);
+            return plt.GetImageBytes();
+        }
+        public static List<(DateTime, double, double)> AverageDailySongVarietyByHour(DateTime from, DateTime to)
+        {
+            var songVarieties = new Dictionary<int, List<double>>();
+            var curFrom = new DateTime(from.Year, from.Month, from.Day);
+            while (curFrom < to)
+            {
+                var curTo = curFrom + TimeSpan.FromDays(1);
+                var curVarietyByHour = SongVarietyByHour(curFrom, curTo);
+                foreach(var variety in curVarietyByHour)
+                {
+                    if (!songVarieties.ContainsKey(variety.Item1.Hour))
+                        songVarieties[variety.Item1.Hour] = new List<double>();
+                    songVarieties[variety.Item1.Hour].Add(variety.Item2);
+                }
+                curFrom += TimeSpan.FromDays(1);
+            }
+            return songVarieties
+                .Select(sv => 
+                (
+                    new DateTime(1, 1, 1, sv.Key, 0, 0),
+                    sv.Value.Average(), 
+                    sv.Value.StandardDeviation())
+                )
+                .OrderBy(sv => sv.Item1)
+                .ToList();
         }
 
 
-        public record ObjectCount<T>(T Object, int Count);
     }
 }

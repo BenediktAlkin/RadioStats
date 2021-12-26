@@ -1,6 +1,7 @@
 ﻿using Backend;
 using Serilog;
 using System;
+using System.IO;
 
 namespace Runner
 {
@@ -13,8 +14,12 @@ namespace Runner
                 .WriteTo.File("runner.log")
                 .CreateLogger();
 
-            DatabaseOperations.UpdateDb();
-
+            // DatabaseOperations.UpdateDb();
+            var from = new DateTime(2021, 01, 01);
+            var to = new DateTime(2021, 12, 25);
+            var image = Statistics.AverageDailySongVarietyByHourPlot(from, to);
+            File.WriteAllBytes("yearly_variety.png", image);
+            
             Log.Information("finished");
         }
     }
