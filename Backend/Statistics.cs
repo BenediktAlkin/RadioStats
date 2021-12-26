@@ -112,6 +112,7 @@ namespace Backend
             static double GetVariety(int frequencySum, double averageFrequencySum)
             {
                 if (frequencySum == 0 || averageFrequencySum == 0) return 1;
+                // TODO for some reason sometimes at 00:00 this is very high
                 return Math.Clamp(frequencySum / averageFrequencySum, 0, 2);
             }
             return frequencySumByHour
