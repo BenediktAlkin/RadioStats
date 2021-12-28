@@ -1,5 +1,4 @@
 ﻿using Backend.Entities;
-using GroupDocs.Conversion;
 using Microsoft.EntityFrameworkCore;
 using OxyPlot;
 using OxyPlot.Axes;
@@ -120,17 +119,11 @@ namespace Backend
             exporter.Export(model, stream);
             stream.Position = 0;
 
-
-            var converter = new Converter(() => stream);
-            var convertOptions = converter.GetPossibleConversions()["jpg"].ConvertOptions;
-            converter.Convert("output.jpg", convertOptions);
-            return File.ReadAllBytes("output.png");
-
-            //var loadedSvg = SvgDocument.Open<SvgDocument>(stream);
-            //var bmp = loadedSvg.Draw();
-            //using var convertStream = new MemoryStream();
-            //bmp.Save(convertStream, System.Drawing.Imaging.ImageFormat.Png);
-            //return convertStream.ToArray();
+            var loadedSvg = SvgDocument.Open<SvgDocument>(stream);
+            var bmp = loadedSvg.Draw();
+            using var convertStream = new MemoryStream();
+            bmp.Save(convertStream, System.Drawing.Imaging.ImageFormat.Png);
+            return convertStream.ToArray();
         }
 
         public static List<(DateTime, double)> SongVarietyByHour(DateTime from, DateTime to)
