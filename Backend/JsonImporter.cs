@@ -54,7 +54,7 @@ namespace Backend
                 // skip event if it is after till
                 if(till != null && jsonEvent.Time > till)
                 {
-                    Log.Information($"skipping event {jsonEvent} (after {till}");
+                    Log.Information($"skipping event {jsonEvent} (after {till})");
                     continue;
                 }
 
