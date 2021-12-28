@@ -16,4 +16,5 @@ rm RadioStatsTweeter.zip
 mv config.yaml RadioStatsTweeter/config.yaml
 mv mailer_config.yaml RadioStatsTweeter/mailer_config.yaml
 mv tweeter_config.yaml RadioStatsTweeter/tweeter_config.yaml
+# wget https://github.com/BenediktAlkin/RadioStats/releases/download/v0.1.3/RadioStats.sqlite
 mv RadioStats.sqlite RadioStatsTweeter/RadioStats.sqlite

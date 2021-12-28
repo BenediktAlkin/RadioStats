@@ -13,7 +13,6 @@ chmod +x RadioStatsTweeter/Tweeter
 
 # some setup stuff such that no errors occour
 export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
-apt-get install -y libgdiplus
 
 # notify user to create configs
 echo TODO create config.yaml
