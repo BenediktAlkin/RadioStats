@@ -51,6 +51,7 @@ namespace Backend.Tests
             DatabaseOperations.UpdateDb(from, till);
 
             var image = Statistics.SongVarietyByHourPlot(from, till);
+            // File.WriteAllBytes("variety.png", image);
             var expected = File.ReadAllBytes("Resources/variety.png");
             Assert.AreEqual(expected, image);
         }
@@ -61,6 +62,7 @@ namespace Backend.Tests
             var till = from + TimeSpan.FromDays(1);
 
             var image = Statistics.SongVarietyByHourPlot(from, till);
+            // File.WriteAllBytes("no_events_songvariety.png", image);
             var expected = File.ReadAllBytes("Resources/no_events_songvariety.png");
             Assert.AreEqual(expected, image);
         }

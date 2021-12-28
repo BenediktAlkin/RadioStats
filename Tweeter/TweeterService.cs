@@ -65,12 +65,13 @@ namespace Tweeter
         {
             try
             {
+                var startTime = DateTime.Now;
                 Log.Information("updating db");
                 DatabaseOperations.UpdateDb();
 
                 await TweetStatistics(DateTime.Now);
                 
-                Log.Information($"next tweet time: {DateTime.Now + TWEET_INTERVAL}");
+                Log.Information($"next tweet time: {startTime + TWEET_INTERVAL}");
             }
             catch(Exception e)
             {

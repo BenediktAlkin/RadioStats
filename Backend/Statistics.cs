@@ -1,8 +1,13 @@
 ﻿using Backend.Entities;
 using Microsoft.EntityFrameworkCore;
-using ScottPlot;
+using OxyPlot;
+using OxyPlot.Axes;
+using OxyPlot.Series;
+using Svg;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -48,27 +53,79 @@ namespace Backend
 
         public static byte[] SongVarietyByHourPlot(DateTime from, DateTime to)
         {
-            const string FONT_NAME = "arial";
             var varietyByHour = SongVarietyByHour(from, to);
-            var plt = new Plot(600, 400);
-            var labels = varietyByHour.Select(vbh => vbh.Item1.ToString("HH:mm")).ToArray();
-            // take every other element
-            labels = labels.Select((l, i) => i % 3 == 0 ? l : string.Empty).ToArray();
-            plt.XTicks(labels);
-            var values = varietyByHour.Select(vbh => vbh.Item2).ToArray();
-            plt.AddScatter(
-                Enumerable.Range(0, varietyByHour.Count).Select(i => (double)i).ToArray(), 
-                values);
-            plt.Title("Musikvielfalt per Stunde");
-            // set yrange to 0.5, 1.5
-            var ymin = Math.Min(0.5, values.Min());
-            var ymax = Math.Max(1.5, values.Max());
-            plt.SetAxisLimitsY(ymin, ymax);
 
-            plt.XAxis.LabelStyle(fontName: FONT_NAME);
-            plt.YAxis.LabelStyle(fontName: FONT_NAME);
-            return plt.GetImageBytes();
+
+            const double GRID_HORIZONTAL_INTERVAL = 0.1;
+            const byte GRID_LINE_ALPHA = 40;
+            var line = new LineSeries()
+            {
+                Color = OxyColors.Blue,
+                StrokeThickness = 1,
+                MarkerSize = 2,
+                MarkerType = MarkerType.Circle,
+            };
+            var values = varietyByHour.Select(vbh => vbh.Item2).ToArray();
+            for (var i = 0; i < varietyByHour.Count; i++)
+                line.Points.Add(new DataPoint(i, values[i]));
+
+
+            var model = new PlotModel
+            {
+                Title = "Musikvielfalt per Stunde",
+                Background = OxyColors.White,
+            };
+            model.Series.Add(line);
+
+            var xAxis = new CategoryAxis()
+            {
+                Position = AxisPosition.Bottom,
+                IsTickCentered = true,
+                ExtraGridlines = Enumerable.Range(0, 24).Select(i => (double)i).ToArray(),
+                ExtraGridlineColor = OxyColor.FromAColor(GRID_LINE_ALPHA, OxyColors.Black),
+            };
+            var labels = varietyByHour.Select(vbh => vbh.Item1.ToString("HH:mm")).ToArray();
+            // take only ever k entry
+            labels = labels.Select((l, i) => i % 3 == 0 ? l : string.Empty).ToArray();
+            foreach (var label in labels)
+                xAxis.ActualLabels.Add(label);
+            model.Axes.Add(xAxis);
+
+            // set range to at least [0.5, 1.5] (bigger if bigger values occour)
+            var xmin = Math.Min(0.5, values.Min());
+            var xmax = Math.Max(1.5, values.Max());
+            var gridlinesAbove = Enumerable.Range(1, (int)((xmax - 1) / GRID_HORIZONTAL_INTERVAL)).Select(i => 1 + i * GRID_HORIZONTAL_INTERVAL);
+            var gridlinesBelow= Enumerable.Range(1, (int)((1 - xmin) / GRID_HORIZONTAL_INTERVAL)).Select(i => 1 - i * GRID_HORIZONTAL_INTERVAL);
+            var yAxis = new LinearAxis()
+            {
+                Minimum = xmin,
+                Maximum = xmax,
+                MajorStep = GRID_HORIZONTAL_INTERVAL,
+                AbsoluteMinimum = xmin,
+                AbsoluteMaximum = xmax,
+                ExtraGridlines = gridlinesAbove.Concat(gridlinesBelow).ToArray(),
+                ExtraGridlineColor = OxyColor.FromAColor(GRID_LINE_ALPHA, OxyColors.Black),
+            };
+            model.Axes.Add(yAxis);
+
+            using var stream = new MemoryStream();
+            var exporter = new SvgExporter 
+            { 
+                Width = 600, 
+                Height = 400, 
+                UseVerticalTextAlignmentWorkaround = true,
+                IsDocument = true,
+            };
+            exporter.Export(model, stream);
+            stream.Position = 0;
+
+            var loadedSvg = SvgDocument.Open<SvgDocument>(stream);
+            var bmp = loadedSvg.Draw();
+            using var convertStream = new MemoryStream();
+            bmp.Save(convertStream, System.Drawing.Imaging.ImageFormat.Png);
+            return convertStream.ToArray();
         }
+
         public static List<(DateTime, double)> SongVarietyByHour(DateTime from, DateTime to)
         {
             // calculate frequency of song in timeframe
@@ -153,27 +210,28 @@ namespace Backend
 
         public static byte[] AverageDailySongVarietyByHourPlot(DateTime from, DateTime to)
         {
-            var varietyByHour = AverageDailySongVarietyByHour(from, to);
-            var plt = new Plot(600, 200);
-            var labels = varietyByHour.Select(vbh => vbh.Item1.ToString("HH:mm")).ToArray();
-            // take every other element
-            labels = labels.Select((l, i) => i % 3 == 0 ? l : string.Empty).ToArray();
-            plt.XTicks(labels);
-            var values = varietyByHour.Select(vbh => vbh.Item2).ToArray();
-            var stds = varietyByHour.Select(vbh => vbh.Item3).ToArray();
-            plt.AddScatter(
-                Enumerable.Range(0, varietyByHour.Count).Select(i => (double)i).ToArray(),
-                values);
-            plt.AddFill(
-                Enumerable.Range(0, varietyByHour.Count).Select(i => (double)i).ToArray(),
-                varietyByHour.Select(vbh => vbh.Item2 - vbh.Item3).ToArray(),
-                varietyByHour.Select(vbh => vbh.Item2 + vbh.Item3).ToArray());
-            plt.Title($"Durchschnittliche Musikvielfalt per Stunde {from.Year}");
-            // set yrange to 0.5, 1.5
-            var ymin = Math.Min(0.5, values.Min());
-            var ymax = Math.Max(1.5, values.Max());
-            plt.SetAxisLimitsY(ymin, ymax);
-            return plt.GetImageBytes();
+            throw new NotImplementedException();
+            //var varietyByHour = AverageDailySongVarietyByHour(from, to);
+            //var plt = new Plot(600, 200);
+            //var labels = varietyByHour.Select(vbh => vbh.Item1.ToString("HH:mm")).ToArray();
+            //// take every other element
+            //labels = labels.Select((l, i) => i % 3 == 0 ? l : string.Empty).ToArray();
+            //plt.XTicks(labels);
+            //var values = varietyByHour.Select(vbh => vbh.Item2).ToArray();
+            //var stds = varietyByHour.Select(vbh => vbh.Item3).ToArray();
+            //plt.AddScatter(
+            //    Enumerable.Range(0, varietyByHour.Count).Select(i => (double)i).ToArray(),
+            //    values);
+            //plt.AddFill(
+            //    Enumerable.Range(0, varietyByHour.Count).Select(i => (double)i).ToArray(),
+            //    varietyByHour.Select(vbh => vbh.Item2 - vbh.Item3).ToArray(),
+            //    varietyByHour.Select(vbh => vbh.Item2 + vbh.Item3).ToArray());
+            //plt.Title($"Durchschnittliche Musikvielfalt per Stunde {from.Year}");
+            //// set yrange to 0.5, 1.5
+            //var ymin = Math.Min(0.5, values.Min());
+            //var ymax = Math.Max(1.5, values.Max());
+            //plt.SetAxisLimitsY(ymin, ymax);
+            //return plt.GetImageBytes();
         }
         public static List<(DateTime, double, double)> AverageDailySongVarietyByHour(DateTime from, DateTime to)
         {
