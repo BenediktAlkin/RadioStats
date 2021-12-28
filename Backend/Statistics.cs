@@ -48,6 +48,7 @@ namespace Backend
 
         public static byte[] SongVarietyByHourPlot(DateTime from, DateTime to)
         {
+            const string FONT_NAME = "arial";
             var varietyByHour = SongVarietyByHour(from, to);
             var plt = new Plot(600, 400);
             var labels = varietyByHour.Select(vbh => vbh.Item1.ToString("HH:mm")).ToArray();
@@ -63,6 +64,9 @@ namespace Backend
             var ymin = Math.Min(0.5, values.Min());
             var ymax = Math.Max(1.5, values.Max());
             plt.SetAxisLimitsY(ymin, ymax);
+
+            plt.XAxis.LabelStyle(fontName: FONT_NAME);
+            plt.YAxis.LabelStyle(fontName: FONT_NAME);
             return plt.GetImageBytes();
         }
         public static List<(DateTime, double)> SongVarietyByHour(DateTime from, DateTime to)
