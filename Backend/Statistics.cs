@@ -72,7 +72,7 @@ namespace Backend
 
             var model = new PlotModel
             {
-                Title = "Musikvielfalt per Stunde",
+                Title = "Musikvielfalt",
                 Background = OxyColors.White,
             };
             model.Series.Add(line);
@@ -211,6 +211,7 @@ namespace Backend
         public static byte[] AverageDailySongVarietyByHourPlot(DateTime from, DateTime to)
         {
             throw new NotImplementedException();
+            // TODO
             //var varietyByHour = AverageDailySongVarietyByHour(from, to);
             //var plt = new Plot(600, 200);
             //var labels = varietyByHour.Select(vbh => vbh.Item1.ToString("HH:mm")).ToArray();
