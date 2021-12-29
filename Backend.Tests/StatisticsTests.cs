@@ -18,6 +18,8 @@ namespace Backend.Tests
 
             // drop db
             using var db = new DatabaseContext(dropDb: true);
+
+            Plotter.Init(@"C:\Users\bened\AppData\Local\Programs\Python\Python310\python.exe");
         }
 
         [Test]
@@ -44,26 +46,24 @@ namespace Backend.Tests
             // TODO asserts
         }
         [Test]
-        public void SongDiversityPlot()
+        public void SongVarietyPlot()
         {
             var from = new DateTime(2021, 11, 03, 0, 00, 00);
             var till = from + TimeSpan.FromDays(1);
             DatabaseOperations.UpdateDb(from, till);
 
             var image = Statistics.SongVarietyByHourPlot(from, till);
-            // File.WriteAllBytes("variety.png", image);
             var expected = File.ReadAllBytes("Resources/variety.png");
             Assert.AreEqual(expected, image);
         }
         [Test]
-        public void SongDiversityPlotEmpty()
+        public void SongVarietyPlotEmpty()
         {
             var from = new DateTime(2021, 11, 03, 0, 00, 00);
             var till = from + TimeSpan.FromDays(1);
 
             var image = Statistics.SongVarietyByHourPlot(from, till);
-            // File.WriteAllBytes("no_events_songvariety.png", image);
-            var expected = File.ReadAllBytes("Resources/no_events_songvariety.png");
+            var expected = File.ReadAllBytes("Resources/variety_empty.png");
             Assert.AreEqual(expected, image);
         }
 

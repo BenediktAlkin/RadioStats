@@ -17,6 +17,7 @@ namespace Tweeter
         public string TargetEmail { get; set; }
         public TimeSpan TweetTime { get; set; }
 
+        public string PythonPath { get; set; }
         public bool IsTestRun { get; set; }
     }
 
@@ -44,6 +45,7 @@ namespace Tweeter
             // setup program
             var configYaml = File.ReadAllText("config.yaml");
             var config = deserializer.Deserialize<Config>(configYaml);
+            Plotter.Init(config.PythonPath);
             tweeter.OnError += () => mailer.SendMail(config.TargetEmail, "Ö3RadioStats Error", "Encountered error in Ö3RadioStats");
 
             

@@ -1,5 +1,9 @@
 # deploys the latest version to a fresh VM
 
+# TODO install python
+# TODO install matplotlib
+pip install matplotlib
+
 # install tools
 sudo apt-get install -y wget
 sudo apt-get install -y unzip
