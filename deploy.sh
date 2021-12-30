@@ -1,8 +1,9 @@
 # deploys the latest version to a fresh VM
 
-# TODO install python
-# TODO install matplotlib
-pip install matplotlib
+# install python
+sudo apt-get install python3-pip -y
+pip3 install --upgrade
+pip3 install matplotlib
 
 # install tools
 sudo apt-get install -y wget
@@ -17,7 +18,6 @@ chmod +x RadioStatsTweeter/Tweeter
 
 # some setup stuff such that no errors occour
 export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
-apt-get install -y libgdiplus
 
 # notify user to create configs
 echo TODO create config.yaml

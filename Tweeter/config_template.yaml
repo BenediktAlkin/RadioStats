@@ -1,2 +1,7 @@
-﻿TargetEmail: someemail@gmail.com
-TweetTime: 18:00:00
+﻿TargetEmail: some@email.com
+TweetTime: 17:00:00
+StartDate: 2020.01.01
+
+PythonPath: /usr/bin/python3
+IsTestRun: false
+TestCredentials: false
