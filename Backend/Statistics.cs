@@ -1,5 +1,6 @@
 ﻿using Backend.Entities;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -104,7 +105,10 @@ namespace Backend
             {
                 if (frequencySum == 0 || averageFrequencySum == 0) return 1;
                 // TODO for some reason sometimes at 00:00 this is very high
-                return Math.Clamp(frequencySum / averageFrequencySum, 0, 2);
+                var value = frequencySum / averageFrequencySum;
+                if (value < 0 || value > 2)
+                    Log.Information($"clamping value {value} to [0,2]");
+                return Math.Clamp(value, 0, 2);
             }
             return frequencySumByHour
                 .Select(fsbh => (fsbh.Hour, GetVariety(fsbh.FrequencySum, averageFrequencySum)))
