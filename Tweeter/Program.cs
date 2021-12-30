@@ -16,9 +16,11 @@ namespace Tweeter
     {
         public string TargetEmail { get; set; }
         public TimeSpan TweetTime { get; set; }
+        public DateTime StartDate { get; set; }
 
         public string PythonPath { get; set; }
         public bool IsTestRun { get; set; }
+        public bool TestCredentials { get; set; }
     }
 
     public class Program
@@ -32,25 +34,31 @@ namespace Tweeter
 
             var deserializer = new DeserializerBuilder().Build();
 
-            // setup mailer
+            // load configs
             var mailerYaml = File.ReadAllText("mailer_config.yaml");
             var mailerConfig = deserializer.Deserialize<MailerServiceConfig>(mailerYaml);
+            var tweeterYaml = File.ReadAllText("tweeter_config.yaml");
+            var tweeterConfig = deserializer.Deserialize<TweeterServiceConfig>(tweeterYaml);
+            var configYaml = File.ReadAllText("config.yaml");
+            var config = deserializer.Deserialize<Config>(configYaml);
+
+            // setup mailer
             var mailer = new MailerService(mailerConfig);
 
             // setup tweeter
-            var tweeterYaml = File.ReadAllText("tweeter_config.yaml");
-            var tweeterConfig = deserializer.Deserialize<TweeterServiceConfig>(tweeterYaml);
-            var tweeter = new TweeterService(tweeterConfig);
+            TweeterService tweeter;
+            if (config.IsTestRun)
+                tweeter = new TweeterTestService(tweeterConfig);
+            else
+                tweeter = new TweeterService(tweeterConfig);
 
             // setup program
-            var configYaml = File.ReadAllText("config.yaml");
-            var config = deserializer.Deserialize<Config>(configYaml);
             Plotter.Init(config.PythonPath);
             tweeter.OnError += () => mailer.SendMail(config.TargetEmail, "Ö3RadioStats Error", "Encountered error in Ö3RadioStats");
 
             
             // do test run if specified
-            if (config.IsTestRun)
+            if (config.TestCredentials)
             {
                 // test credentials for mailer & twitter
                 mailer.SendMail(config.TargetEmail, "Ö3RadioStats Test", "Test");
@@ -74,8 +82,9 @@ namespace Tweeter
 
             // start program
             Log.Information("updating db");
-            DatabaseOperations.UpdateDb();
-            await tweeter.Start(config.TweetTime);
+            await tweeter.MakePastTweets(config.TweetTime, config.StartDate);
+            //DatabaseOperations.UpdateDb();
+            await tweeter.Start(config.TweetTime, config.StartDate);
             
             
 

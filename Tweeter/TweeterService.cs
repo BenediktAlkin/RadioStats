@@ -6,6 +6,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
 using Tweetinvi;
+using Tweetinvi.Core.Models;
+using Tweetinvi.Models;
 using Tweetinvi.Parameters;
 
 namespace Tweeter
@@ -36,7 +38,32 @@ namespace Tweeter
             Log.Information($"authenticated as {user.Name}");
         }
 
-        public async Task Start(TimeSpan tweetTime)
+        public async Task MakePastTweets(TimeSpan tweetTime, DateTime startDate)
+        {
+            if (startDate == default) return;
+            var now = DateTime.Now;
+            var today = new DateTime(now.Year, now.Month, now.Day);
+
+            // set today as endDate
+            DateTime endDate;
+            var curTime = new TimeSpan(now.Hour, now.Minute, now.Second);
+            if (curTime < tweetTime)
+                // don't make tweet for today (it's generated automatically)
+                endDate = today;
+            else
+                // make tweet for today (it is supposed to be already there)
+                endDate = today + TimeSpan.FromDays(1);
+            
+            // make past tweets
+            var curDate = new DateTime(startDate.Year, startDate.Month, startDate.Day);
+            while(curDate < endDate)
+            {
+                await TweetStatistics(curDate);
+                curDate += TimeSpan.FromDays(1);
+            }
+        }
+
+        public async Task Start(TimeSpan tweetTime, DateTime startDate)
         {
             // wait for next time to tweet
             if (tweetTime != default)
@@ -80,7 +107,7 @@ namespace Tweeter
                 throw;
             }
         }
-        public async Task TweetStatistics(DateTime to)
+        public virtual async Task TweetStatistics(DateTime to)
         {
             var from = to.AddDays(-1);
 
@@ -94,10 +121,9 @@ namespace Tweeter
             {
                 Medias = { uploadedImage }
             });
-
-            Log.Information($"published tweet:{Environment.NewLine}{tweet}");
+            Log.Information($"published tweet for {to:d}:{Environment.NewLine}{tweet}");
         }
-        private static string GetStatisticsText(DateTime from, DateTime to)
+        protected static string GetStatisticsText(DateTime from, DateTime to)
         {
             Log.Information("retrieving stats");
             var totalSongCount = Statistics.TotalSongCount(from, to);
