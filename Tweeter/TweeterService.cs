@@ -41,7 +41,7 @@ namespace Tweeter
         public async Task MakePastTweets(TimeSpan tweetTime, DateTime startDate)
         {
             if (startDate == default) return;
-            Log.Information("making past tweets starting from {startDate:d}");
+            Log.Information($"making past tweets starting from {startDate:d}");
             var now = DateTime.Now;
             var today = new DateTime(now.Year, now.Month, now.Day);
 
@@ -64,7 +64,7 @@ namespace Tweeter
             }
         }
 
-        public async Task Start(TimeSpan tweetTime, DateTime startDate)
+        public async Task Start(TimeSpan tweetTime)
         {
             // wait for next time to tweet
             if (tweetTime != default)

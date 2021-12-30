@@ -2,7 +2,7 @@
 
 # install python
 sudo apt-get install python3-pip -y
-pip3 install --upgrade
+pip3 install --upgrade pip
 pip3 install matplotlib
 
 # install tools
