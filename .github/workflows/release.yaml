@@ -29,7 +29,7 @@ jobs:
       run: dotnet publish ${{ env.main_project_name }} --configuration ${{ env.build_config }} -o "${{ env.application_name }}" -r linux-x64
     # zip {application_name} into a zip file where the root folder has name {application_name}
     - name: zip portable build
-      uses: papeloto/action-zip@v1
+      uses: vimtor/action-zip@v1
       with:
         files: "${{ env.application_name }}"
         dest: "${{ env.application_name }}.zip"
