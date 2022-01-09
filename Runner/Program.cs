@@ -17,7 +17,8 @@ namespace Runner
             DatabaseContext.DbName = "PremadeDb";
             // DatabaseOperations.UpdateDb();
             Plotter.Init(@"C:\Users\bened\AppData\Local\Programs\Python\Python310\python.exe");
-            GenerateSomeVarietyPlots();
+            //GenerateSomeVarietyPlots();
+            AverageDailySongVarietyByHourPlot();
             
             Log.Information("finished");
         }
@@ -38,7 +39,7 @@ namespace Runner
         public static void AverageDailySongVarietyByHourPlot()
         {
             var from = new DateTime(2021, 01, 01);
-            var to = new DateTime(2021, 12, 25);
+            var to = new DateTime(2021, 12, 31);
             var image = Statistics.AverageDailySongVarietyByHourPlot(from, to);
             File.WriteAllBytes("yearly_variety.png", image);
         }

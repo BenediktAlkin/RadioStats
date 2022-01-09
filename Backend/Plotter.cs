@@ -37,7 +37,7 @@ namespace Backend
             PythonPath = pythonPath;
         }
 
-        public byte[] GetPlot(double[] x, string[] xLabels, string title=null, double[] stds=null)
+        public byte[] GetPlot(double[] x, string[] xLabels, string title=null, double[] stds=null, int width = 12, int height=8)
         {
             File.Delete("data.json");
             File.Delete("plot.png");
@@ -48,6 +48,8 @@ namespace Backend
                 { "xLabels", xLabels },
                 { "stds", stds },
                 { "title", title },
+                { "height", height },
+                { "width", width },
             });
             File.WriteAllText("data.json", json);
             RunPlotter();

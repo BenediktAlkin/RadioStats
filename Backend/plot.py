@@ -9,13 +9,15 @@ do_bar_plot = False
 #     "xLabels": [f"{i:02d}:00" for i in range(24)],
 #     "stds": None,
 #     "title": None,
+#     "height": 6,
+#     "width": 4,
 # }
 
 import json
 with open("data.json") as f:
     data = json.load(f)
 
-fig, ax = plt.subplots(figsize=(6,4))
+fig, ax = plt.subplots(figsize=(data["width"], data["height"]))
 
 # plot data
 x = data["x"]
@@ -27,7 +29,7 @@ else:
     if stds is not None:
         lb = [x[i] - stds[i] for i in range(len(x))]
         ub = [x[i] + stds[i] for i in range(len(x))]
-        plt.fill_between(range(len(x)), lb, ub, alpha=0.3)
+        plt.fill_between(range(len(x)), lb, ub, alpha=0.3, zorder=3)
 
 # set x tick labels
 labels = data["xLabels"]

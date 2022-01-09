@@ -170,7 +170,7 @@ namespace Backend
             var xLabels = varietyByHour.Select(vbh => vbh.Item1.ToString("HH:mm")).ToArray();
             var values = varietyByHour.Select(vbh => vbh.Item2).ToArray();
             var stds = varietyByHour.Select(vbh => vbh.Item3).ToArray();
-            return Plotter.Instance.GetPlot(x: values, stds: stds, xLabels: xLabels);
+            return Plotter.Instance.GetPlot(x: values, stds: stds, xLabels: xLabels, width: 12, height: 4, title: $"Durchschnittliche Musikvielfalt per Stunde {from:yyyy}");
         }
         public static List<(DateTime, double, double)> AverageDailySongVarietyByHour(DateTime from, DateTime to)
         {
