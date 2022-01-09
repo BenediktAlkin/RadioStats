@@ -46,6 +46,8 @@ namespace Tweeter
             for (var i = 0; i < tweets.Length; i++)
             {
                 var tweet = tweets[i];
+                if (tweet.FullText.Contains("Musikvielfalt Berechnung:"))
+                    continue;
                 await Client.Tweets.DestroyTweetAsync(tweet.Id);
                 Log.Information($"deleted tweet {i+1}/{tweets.Length} {tweet.FullText}");
             }
