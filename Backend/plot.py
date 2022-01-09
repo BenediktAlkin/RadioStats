@@ -8,6 +8,7 @@ do_bar_plot = False
 #     "x": np.random.randn(24),
 #     "xLabels": [f"{i:02d}:00" for i in range(24)],
 #     "stds": None,
+#     "title": None,
 # }
 
 import json
@@ -50,8 +51,9 @@ else:
     plt.title(data["title"])
 
 if do_bar_plot:
-    plt.grid(axis="y")
+    plt.grid(axis="y", color="white")
 else:
-    plt.grid(which="major")
-    plt.grid(which="minor")
+    plt.grid(which="major", color="white")
+    plt.grid(which="minor", color="white")
+ax.set_facecolor('whitesmoke')
 plt.savefig("plot.png")
