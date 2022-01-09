@@ -149,7 +149,7 @@ namespace Tweeter
 
             var sb = new StringBuilder();
             // do this to avoid duplicates (duplicates are forbidden)
-            sb.Append($"{to:MM.dd}\n");
+            sb.Append($"{to:dd.MM}\n");
             sb.Append($"{totalSongCount} gespielte Songs ({totalSongMinutes} Minuten)\n");
             sb.Append($"{uniqueSongCount} einzigartige Songs ({uniqueSongRatio}%)\n");
             
