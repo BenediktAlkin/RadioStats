@@ -25,7 +25,7 @@ namespace Backend.Tests
         public void DownloadJsonEvents(string dateTimeStr, int count)
         {
             var dateTime = DateTime.Parse(dateTimeStr);
-            var jsonEvents = Util.InvokePrivateMethod<List<JsonEvent>>(typeof(Downloader), "DownloadJsonEvents", dateTime);
+            var jsonEvents = Downloader.DownloadJsonEvents(dateTime);
 
             Assert.AreEqual(count, jsonEvents.Count);
         }

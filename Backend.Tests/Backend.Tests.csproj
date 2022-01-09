@@ -32,7 +32,7 @@
     <None Update="Resources\no_events_songvariety.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\variety.png">
+    <None Update="Resources\TestDatabase.sqlite">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Resources\variety_empty.png">

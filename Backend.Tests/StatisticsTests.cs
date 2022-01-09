@@ -16,10 +16,8 @@ namespace Backend.Tests
         {
             base.SetUp();
 
-            // drop db
-            using var db = new DatabaseContext(dropDb: true);
-
             Plotter.Init(@"C:\Users\bened\AppData\Local\Programs\Python\Python310\python.exe");
+            DatabaseContext.DbName = "Resources/TestDatabase";
         }
 
         [Test]
@@ -27,7 +25,6 @@ namespace Backend.Tests
         {
             var from = new DateTime(2021, 11, 01, 18, 00, 00);
             var till = from + TimeSpan.FromHours(12);
-            DatabaseOperations.UpdateDb(from, till);
 
             var topKSongCounts = Statistics.MostPlayedSongs(from, till, 5);
             Assert.AreEqual(5, topKSongCounts.Count);
@@ -40,31 +37,36 @@ namespace Backend.Tests
         {
             var from = new DateTime(2021, 11, 01, 0, 00, 00);
             var till = from + TimeSpan.FromDays(1);
-            DatabaseOperations.UpdateDb(from, till);
 
             var variety = Statistics.SongVarietyByHour(from, till);
             // TODO asserts
         }
         [Test]
-        public void SongVarietyPlot()
-        {
-            var from = new DateTime(2021, 11, 03, 0, 00, 00);
-            var till = from + TimeSpan.FromDays(1);
-            DatabaseOperations.UpdateDb(from, till);
-
-            var image = Statistics.SongVarietyByHourPlot(from, till);
-            var expected = File.ReadAllBytes("Resources/variety.png");
-            Assert.AreEqual(expected, image);
-        }
-        [Test]
         public void SongVarietyPlotEmpty()
         {
-            var from = new DateTime(2021, 11, 03, 0, 00, 00);
+            var from = new DateTime(2022, 11, 03, 0, 00, 00);
             var till = from + TimeSpan.FromDays(1);
 
             var image = Statistics.SongVarietyByHourPlot(from, till);
             var expected = File.ReadAllBytes("Resources/variety_empty.png");
             Assert.AreEqual(expected, image);
+        }
+        [Test]
+        public void AverageDailySongVariety()
+        {
+            var from = new DateTime(2021, 01, 01);
+            var to = new DateTime(2021, 12, 25);
+            var image = Statistics.AverageDailySongVarietyByHourPlot(from, to);
+        }
+        [Test]
+        public void SongVarietyOnlyUniqueSongs()
+        {
+            // on 30.12.2021 Ö3 played only unique songs
+            var from = new DateTime(2021, 12, 30, 0, 00, 00);
+            var till = from + TimeSpan.FromDays(1);
+
+            var varieties = Statistics.SongVarietyByHour(from, till);
+            Assert.IsTrue(varieties.All(v => v.Item2 == 1));
         }
 
         [Test]
@@ -72,7 +74,6 @@ namespace Backend.Tests
         {
             var from = new DateTime(2021, 11, 01, 0, 00, 00);
             var till = from + TimeSpan.FromHours(12);
-            DatabaseOperations.UpdateDb(from, till);
 
 
             var uniqueSongCount = Statistics.UniqueSongCount(from, till);

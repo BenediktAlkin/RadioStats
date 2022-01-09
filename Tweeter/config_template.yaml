@@ -5,3 +5,4 @@ StartDate: 2020.01.01
 PythonPath: /usr/bin/python3
 IsTestRun: false
 TestCredentials: false
+DeleteAllTweets: false

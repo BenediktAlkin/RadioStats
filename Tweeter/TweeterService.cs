@@ -26,6 +26,7 @@ namespace Tweeter
         private const int TWEET_MAX_CHARS = 280;
 
         private TwitterClient Client { get; set; }
+        private IAuthenticatedUser User { get; set; }
 
         public delegate void TweeterServiceErrorEventHandler();
         public event TweeterServiceErrorEventHandler OnError;
@@ -34,8 +35,20 @@ namespace Tweeter
         {
             // initialize twitter client and check connection
             Client = new TwitterClient(config.ApiKey, config.ApiKeySecret, config.ApiAccessToken, config.ApiAccessTokenSecret);
-            var user = Client.Users.GetAuthenticatedUserAsync().Result;
-            Log.Information($"authenticated as {user.Name}");
+            User = Client.Users.GetAuthenticatedUserAsync().Result;
+            Log.Information($"authenticated as {User.Name}");
+        }
+
+        public async Task DeleteAllTweets()
+        {
+            var tweets = await Client.Timelines.GetUserTimelineAsync(User.Id);
+            Log.Information($"found {tweets.Length} tweets in timeline to delete");
+            for (var i = 0; i < tweets.Length; i++)
+            {
+                var tweet = tweets[i];
+                await Client.Tweets.DestroyTweetAsync(tweet.Id);
+                Log.Information($"deleted tweet {i+1}/{tweets.Length} {tweet.FullText}");
+            }
         }
 
         public async Task MakePastTweets(TimeSpan tweetTime, DateTime startDate)

@@ -78,7 +78,10 @@ namespace Backend
             }
 
             // get counts
-            var eventsInTimeSpan = db.Events.Where(e => fromUnix < e.StartTimeUnix && e.StartTimeUnix < toUnix).ToList();
+            var eventsInTimeSpan = db.Events
+                .Include(e => e.Song).ThenInclude(s => s.Artists)
+                .Where(e => fromUnix < e.StartTimeUnix && e.StartTimeUnix < toUnix)
+                .ToList();
             var frequencyBySongId = eventsInTimeSpan.GroupBy(e => e.SongId).ToDictionary(g => g.Key, g => g.Count());
 
             // group events by hour
@@ -99,19 +102,38 @@ namespace Backend
             {
                 if (!hoursWithEvents.Contains(hour))
                     frequencySumByHour.Add(new { Hour = hour, FrequencySum = 0 });
+                if (!eventsByHour.ContainsKey(hour))
+                    eventsByHour[hour] = new List<Event>();
             }
-            var averageFrequencySum = frequencySumByHour.Average(fsbh => fsbh.FrequencySum);
-            static double GetVariety(int frequencySum, double averageFrequencySum)
+
+            static double GetVariety(int frequencySum, double nSongs)
             {
-                if (frequencySum == 0 || averageFrequencySum == 0) return 1;
-                // TODO for some reason sometimes at 00:00 this is very high
-                var value = frequencySum / averageFrequencySum;
-                if (value < 0 || value > 2)
-                    Log.Information($"clamping value {value} to [0,2]");
-                return Math.Clamp(value, 0, 2);
+                if (frequencySum == 0 || nSongs == 0) return 1;
+                return nSongs / frequencySum;
             }
+
+            // log for analysis
+            Log.Information($"Frequencies from {from:g} to {to:g} (totalEvents={eventsInTimeSpan.Count}, uniqueEvents={frequencyBySongId.Keys.Count})");
+            var frequencyCounts = frequencyBySongId.GroupBy(f => f.Value).ToDictionary(g => g.Key, g => g.Count()).OrderByDescending(g => g.Key);
+            foreach (var kv in frequencyCounts)
+                Log.Information($"{kv.Value} Songs were played {kv.Key} times");
+            Log.Information("Frequencies from the whole day");
+            var songsById = eventsInTimeSpan.GroupBy(e => e.SongId).ToDictionary(g => g.Key, g => g.First().Song);
+            foreach (var kv in frequencyBySongId.OrderByDescending(kv => kv.Value))
+            {
+                var song = songsById[kv.Key];
+                Log.Information($"{kv.Value}x {song.Name} - {song.ArtistsString}");
+            }
+            Log.Information($"Song Varieties for {from:g} to {to:g}");
+            foreach (var fsbh in frequencySumByHour)
+            {
+                Log.Information($"{fsbh.Hour:t}: events={eventsByHour[fsbh.Hour].Count} frequency={fsbh.FrequencySum}");
+                foreach(var e in eventsByHour[fsbh.Hour])
+                    Log.Information($"frequency={frequencyBySongId[e.SongId]} {e.Song.Name} - {e.Song.ArtistsString} (id={e.SongId})");
+            }
+
             return frequencySumByHour
-                .Select(fsbh => (fsbh.Hour, GetVariety(fsbh.FrequencySum, averageFrequencySum)))
+                .Select(fsbh => (fsbh.Hour, GetVariety(fsbh.FrequencySum, eventsByHour[fsbh.Hour].Count)))
                 .OrderBy(hourVariety => hourVariety.Hour)
                 .ToList();
         }
@@ -144,29 +166,11 @@ namespace Backend
 
         public static byte[] AverageDailySongVarietyByHourPlot(DateTime from, DateTime to)
         {
-            throw new NotImplementedException();
-            // TODO
-            //var varietyByHour = AverageDailySongVarietyByHour(from, to);
-            //var plt = new Plot(600, 200);
-            //var labels = varietyByHour.Select(vbh => vbh.Item1.ToString("HH:mm")).ToArray();
-            //// take every other element
-            //labels = labels.Select((l, i) => i % 3 == 0 ? l : string.Empty).ToArray();
-            //plt.XTicks(labels);
-            //var values = varietyByHour.Select(vbh => vbh.Item2).ToArray();
-            //var stds = varietyByHour.Select(vbh => vbh.Item3).ToArray();
-            //plt.AddScatter(
-            //    Enumerable.Range(0, varietyByHour.Count).Select(i => (double)i).ToArray(),
-            //    values);
-            //plt.AddFill(
-            //    Enumerable.Range(0, varietyByHour.Count).Select(i => (double)i).ToArray(),
-            //    varietyByHour.Select(vbh => vbh.Item2 - vbh.Item3).ToArray(),
-            //    varietyByHour.Select(vbh => vbh.Item2 + vbh.Item3).ToArray());
-            //plt.Title($"Durchschnittliche Musikvielfalt per Stunde {from.Year}");
-            //// set yrange to 0.5, 1.5
-            //var ymin = Math.Min(0.5, values.Min());
-            //var ymax = Math.Max(1.5, values.Max());
-            //plt.SetAxisLimitsY(ymin, ymax);
-            //return plt.GetImageBytes();
+            var varietyByHour = AverageDailySongVarietyByHour(from, to);
+            var xLabels = varietyByHour.Select(vbh => vbh.Item1.ToString("HH:mm")).ToArray();
+            var values = varietyByHour.Select(vbh => vbh.Item2).ToArray();
+            var stds = varietyByHour.Select(vbh => vbh.Item3).ToArray();
+            return Plotter.Instance.GetPlot(x: values, stds: stds, xLabels: xLabels);
         }
         public static List<(DateTime, double, double)> AverageDailySongVarietyByHour(DateTime from, DateTime to)
         {

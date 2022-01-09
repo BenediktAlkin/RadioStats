@@ -9,9 +9,10 @@ namespace Backend
 {
     public class DatabaseContext : DbContext
     {
-        private const string DB_FILE = @"RadioStats.sqlite";
+        public static string DbName { get; set; } = "RadioStats";
 
-        public DatabaseContext(bool dropDb=false) : base(new DbContextOptionsBuilder<DatabaseContext>().UseSqlite($"Data Source={DB_FILE}").Options)
+        public DatabaseContext(bool dropDb=false) 
+            : base(new DbContextOptionsBuilder<DatabaseContext>().UseSqlite($"Data Source={DbName}.sqlite").Options)
         {
             if (dropDb)
                 Database.EnsureDeleted();

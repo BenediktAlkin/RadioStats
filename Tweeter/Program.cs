@@ -20,6 +20,7 @@ namespace Tweeter
 
         public string PythonPath { get; set; }
         public bool IsTestRun { get; set; }
+        public bool DeleteAllTweets { get; set; }
         public bool TestCredentials { get; set; }
     }
 
@@ -56,6 +57,13 @@ namespace Tweeter
             Plotter.Init(config.PythonPath);
             tweeter.OnError += () => mailer.SendMail(config.TargetEmail, "Ö3RadioStats Error", "Encountered error in Ö3RadioStats");
 
+            // delete all tweets
+            if (config.DeleteAllTweets)
+            {
+                await tweeter.DeleteAllTweets();
+                return;
+            }
+                
             
             // do test run if specified
             if (config.TestCredentials)
