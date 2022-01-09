@@ -113,23 +113,23 @@ namespace Backend
             }
 
             // log for analysis
-            Log.Information($"Frequencies from {from:g} to {to:g} (totalEvents={eventsInTimeSpan.Count}, uniqueEvents={frequencyBySongId.Keys.Count})");
+            Log.Debug($"Frequencies from {from:g} to {to:g} (totalEvents={eventsInTimeSpan.Count}, uniqueEvents={frequencyBySongId.Keys.Count})");
             var frequencyCounts = frequencyBySongId.GroupBy(f => f.Value).ToDictionary(g => g.Key, g => g.Count()).OrderByDescending(g => g.Key);
             foreach (var kv in frequencyCounts)
-                Log.Information($"{kv.Value} Songs were played {kv.Key} times");
-            Log.Information("Frequencies from the whole day");
+                Log.Debug($"{kv.Value} Songs were played {kv.Key} times");
+            Log.Debug("Frequencies from the whole day");
             var songsById = eventsInTimeSpan.GroupBy(e => e.SongId).ToDictionary(g => g.Key, g => g.First().Song);
             foreach (var kv in frequencyBySongId.OrderByDescending(kv => kv.Value))
             {
                 var song = songsById[kv.Key];
-                Log.Information($"{kv.Value}x {song.Name} - {song.ArtistsString}");
+                Log.Debug($"{kv.Value}x {song.Name} - {song.ArtistsString}");
             }
-            Log.Information($"Song Varieties for {from:g} to {to:g}");
+            Log.Debug($"Song Varieties for {from:g} to {to:g}");
             foreach (var fsbh in frequencySumByHour)
             {
-                Log.Information($"{fsbh.Hour:t}: events={eventsByHour[fsbh.Hour].Count} frequency={fsbh.FrequencySum}");
+                Log.Debug($"{fsbh.Hour:t}: events={eventsByHour[fsbh.Hour].Count} frequency={fsbh.FrequencySum}");
                 foreach(var e in eventsByHour[fsbh.Hour])
-                    Log.Information($"frequency={frequencyBySongId[e.SongId]} {e.Song.Name} - {e.Song.ArtistsString} (id={e.SongId})");
+                    Log.Debug($"frequency={frequencyBySongId[e.SongId]} {e.Song.Name} - {e.Song.ArtistsString} (id={e.SongId})");
             }
 
             return frequencySumByHour

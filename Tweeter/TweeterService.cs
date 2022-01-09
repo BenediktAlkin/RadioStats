@@ -69,7 +69,7 @@ namespace Tweeter
                 endDate = today + TimeSpan.FromDays(1);
             
             // make past tweets
-            var curDate = new DateTime(startDate.Year, startDate.Month, startDate.Day);
+            var curDate = new DateTime(startDate.Year, startDate.Month, startDate.Day, tweetTime.Hours, tweetTime.Minutes, tweetTime.Seconds);
             while(curDate < endDate)
             {
                 await TweetStatistics(curDate);

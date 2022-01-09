@@ -89,7 +89,6 @@ namespace Tweeter
 
 
             // start program
-            Log.Information("updating db");
             await tweeter.MakePastTweets(config.TweetTime, config.StartDate);
             DatabaseOperations.UpdateDb();
             await tweeter.Start(config.TweetTime);
