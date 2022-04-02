@@ -23,5 +23,8 @@ namespace Backend
             double avg = values.Average();
             return Math.Sqrt(values.Average(v => Math.Pow(v - avg, 2)));
         }
+
+        public static DateTime RemoveDateInfo(DateTime datetime) 
+            => new(01, 01, 01, datetime.Hour, datetime.Minute, datetime.Second);
     }
 }

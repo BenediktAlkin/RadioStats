@@ -18,9 +18,17 @@ namespace Runner
             // DatabaseOperations.UpdateDb();
             Plotter.Init(@"C:\Users\bened\AppData\Local\Programs\Python\Python310\python.exe");
             //GenerateSomeVarietyPlots();
-            AverageDailySongVarietyByHourPlot();
+            GetAverageMusicDurationPerHourPlot();
             
             Log.Information("finished");
+        }
+
+        public static void GetAverageMusicDurationPerHourPlot()
+        {
+            var from = new DateTime(2021, 01, 01);
+            var to = new DateTime(2021, 12, 31);
+            var image = Statistics.GetAverageMusicDurationPerHourPlot(from, to);
+            File.WriteAllBytes("yearly_musicduration.png", image);
         }
 
         public static void GenerateSomeVarietyPlots()
@@ -33,7 +41,6 @@ namespace Runner
                 File.WriteAllBytes($"variety_{from:yyyy.MM.dd}.png", image);
                 from += TimeSpan.FromDays(1);
             }
-            
         }
 
         public static void AverageDailySongVarietyByHourPlot()

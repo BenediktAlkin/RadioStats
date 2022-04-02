@@ -142,18 +142,19 @@ namespace Tweeter
         protected static string GetStatisticsText(DateTime from, DateTime to)
         {
             Log.Information("retrieving stats");
-            var totalSongCount = Statistics.TotalSongCount(from, to);
-            var totalSongMinutes = Statistics.TotalSongMinutes(from, to);
-            var uniqueSongCount = Statistics.UniqueSongCount(from, to);
-            var uniqueSongRatio = (int)Math.Round((double)uniqueSongCount * 100 / Math.Max(1, totalSongCount));
-            var mostPlayedSongs = Statistics.MostPlayedSongs(from, to, 10);
-            var tweetStrings = mostPlayedSongs.Select(songCount => $"{songCount.Item2}x {songCount.Item1}").ToList();
+            var uniqueSongsResult = Statistics.GetUniqueSongs(from, to);
+            var musicDurationResult = Statistics.GetMusicDuration(from, to);
+            var uniqueSongPercentRounded = (int)Math.Round(uniqueSongsResult.UniqueSongPercentage * 100);
+            var mostPlayedSongsResult = Statistics.MostPlayedSongs(from, to, 10);
+            var tweetStrings = Enumerable.Range(0, mostPlayedSongsResult.TopK)
+                .Select(i => $"{mostPlayedSongsResult.Counts[i]}x {mostPlayedSongsResult.Songs[i]}").ToList();
 
             var sb = new StringBuilder();
             // do this to avoid duplicates (duplicates are forbidden)
-            sb.Append($"{to:dd.MM}\n");
-            sb.Append($"{totalSongCount} gespielte Songs ({totalSongMinutes} Minuten)\n");
-            sb.Append($"{uniqueSongCount} einzigartige Songs ({uniqueSongRatio}%)\n");
+            sb.Append($"{from:dd.MM}-{to:dd.MM}\n");
+            //sb.Append($"{uniqueSongsResult.SongCount} gespielte Songs ({totalSongMinutes.MusicMinutes} Minuten)\n");
+            sb.Append($"{uniqueSongsResult.SongCount} gespielte Songs ({musicDurationResult.MusicHours} Stunden)\n");
+            sb.Append($"{uniqueSongsResult.UniqueSongCount} einzigartige Songs ({uniqueSongPercentRounded}%)\n");
             
             if (tweetStrings.Count > 0)
                 sb.Append($"Toptracks:");

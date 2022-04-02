@@ -26,10 +26,10 @@ namespace Backend.Tests
             var from = new DateTime(2021, 11, 01, 18, 00, 00);
             var till = from + TimeSpan.FromHours(12);
 
-            var topKSongCounts = Statistics.MostPlayedSongs(from, till, 5);
-            Assert.AreEqual(5, topKSongCounts.Count);
-            Assert.AreEqual(2, topKSongCounts[0].Item2);
-            Assert.AreEqual(2, topKSongCounts[1].Item2);
+            var mostPlayedSongResults = Statistics.MostPlayedSongs(from, till, 5);
+            Assert.AreEqual(5, mostPlayedSongResults.TopK);
+            Assert.AreEqual(2, mostPlayedSongResults.Counts[0]);
+            Assert.AreEqual(2, mostPlayedSongResults.Counts[1]);
         }
 
         [Test]
@@ -73,12 +73,37 @@ namespace Backend.Tests
         public void SongCounts()
         {
             var from = new DateTime(2021, 11, 01, 0, 00, 00);
-            var till = from + TimeSpan.FromHours(12);
+            var to = from + TimeSpan.FromHours(12);
 
-
-            var uniqueSongCount = Statistics.UniqueSongCount(from, till);
-            var totalSongCount = Statistics.TotalSongCount(from, till);
+            var uniqueSongsResult = Statistics.GetUniqueSongs(from, to);
             // TODO asserts
+        }
+
+        [Test]
+        public void WeeklyStats()
+        {
+            var from = new DateTime(2021, 08, 15, 18, 00, 00);
+            for(var i = 0; i < 10; i++)
+            {
+                var to = from.AddDays(7);
+                //var result = Statistics.GetTimeSpanStats(from, to);
+                //Console.WriteLine($"{result.SongCount} {result.UniqueSongCount} {result.UniqueSongPercentage*100:N0} " +
+                //    $"{result.Minutes} {result.MusicMinutes} {result.MusicMinutesPercent*100:N0}");
+                from = to;
+            }
+        }
+
+        [Test]
+        public void MusicTime()
+        {
+            var from = new DateTime(2021, 08, 15, 18, 00, 00);
+            for(var i = 0; i < 1000; i++)
+            {
+                var to = from.AddHours(1);
+                var result = Statistics.GetMusicDuration(from, to);
+                Console.WriteLine($"{from:HH} {result.Seconds} {result.MusicSeconds} {result.MusicPercentage * 100:N0}");
+                from = to;
+            }
         }
     }
 }

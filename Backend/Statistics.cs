@@ -13,40 +13,166 @@ namespace Backend
 {
     public static class Statistics
     {
-        public static int UniqueSongCount(DateTime from, DateTime to)
+        public class TimeSpanResult
         {
-            var fromUnix = Util.UnixTimestamp(from);
-            var toUnix = Util.UnixTimestamp(to);
-
-            using var db = new DatabaseContext();
-            return db.Events
-                .Where(e => fromUnix < e.StartTimeUnix && e.StartTimeUnix < toUnix)
-                .Select(e => e.SongId)
-                .Distinct()
-                .Count();
+            public DateTime From { get; set; }
+            public DateTime To { get; set; }
         }
-        public static int TotalSongCount(DateTime from, DateTime to)
-        {
-            var fromUnix = Util.UnixTimestamp(from);
-            var toUnix = Util.UnixTimestamp(to);
 
-            using var db = new DatabaseContext();
-            return db.Events
-                .Where(e => fromUnix < e.StartTimeUnix && e.StartTimeUnix < toUnix)
-                .Count();
+        #region MusicSeconds
+        public class MusicDurationResult : TimeSpanResult
+        {
+            public int MusicSeconds { get; set; }
+            public int MusicMinutes => MusicSeconds / 60;
+            public int MusicHours => MusicMinutes / 60;
+            public int Seconds => (int)(To - From).TotalSeconds;
+            public int Minutes => (int)(To - From).TotalMinutes;
+            public int Hours => (int)(To - From).TotalHours;
+            public double MusicPercentage => (double)MusicSeconds / Math.Max(1, Seconds);
         }
-        public static int TotalSongMinutes(DateTime from, DateTime to) => (int)(TotalSongSeconds(from, to) / 60);
-        public static int TotalSongSeconds(DateTime from, DateTime to)
+        public static MusicDurationResult GetMusicDuration(DateTime from, DateTime to)
         {
             var fromUnix = Util.UnixTimestamp(from);
             var toUnix = Util.UnixTimestamp(to);
 
             using var db = new DatabaseContext();
-            return db.Events
+            var musicSeconds = db.Events
                 .Where(e => fromUnix < e.StartTimeUnix && e.StartTimeUnix < toUnix)
                 .Select(e => e.Duration)
                 .Sum();
+
+            return new MusicDurationResult
+            {
+                From = from,
+                To = to,
+                MusicSeconds = musicSeconds,
+            };
         }
+        public class AverageMusicDurationResult : MusicDurationResult
+        {
+            public int MusicSecondsMin { get; set; }
+            public int MusicSecondsMax { get; set; }
+            public double MusicPercentageMin => (double)MusicSecondsMin / Math.Max(1, Seconds);
+            public double MusicPercentageMax => (double)MusicSecondsMax / Math.Max(1, Seconds);
+        }
+        public static List<AverageMusicDurationResult> GetAverageMusicDurationPerHour(DateTime from, DateTime to)
+        {
+            // retrieve MusicDurationResults for every hour
+            var musicDurationResults = new List<MusicDurationResult>();
+            var curFrom = new DateTime(from.Year, from.Month, from.Day, from.Hour, from.Minute, from.Second);
+            while(curFrom < to)
+            {
+                var curTo = curFrom.AddHours(1);
+                musicDurationResults.Add(GetMusicDuration(curFrom, curTo));
+                curFrom = curTo;
+            }
+            
+            // remove date information from MusicDurationResults
+            foreach(var musicDurationResult in musicDurationResults)
+            {
+                musicDurationResult.From = Util.RemoveDateInfo(musicDurationResult.From);
+                musicDurationResult.To = Util.RemoveDateInfo(musicDurationResult.To);
+            }
+
+            var dict = musicDurationResults.GroupBy(mdr => mdr.From).ToDictionary(g => g.Key, g => g.ToList());
+
+            // average by hour
+            // TODO this returns some weird values
+            return musicDurationResults
+                .GroupBy(mdr => mdr.From)
+                .Select(g => new AverageMusicDurationResult
+                {
+                    From = g.Key,
+                    To = g.First().To,
+                    MusicSeconds = (int)Math.Round(g.Select(mdr => mdr.MusicSeconds).Average()),
+                    MusicSecondsMax = g.Select(mdr => mdr.MusicSeconds).Max(),
+                    MusicSecondsMin = g.Select(mdr => mdr.MusicSeconds).Min(),
+                })
+                .ToList();
+        }
+        
+        public static byte[] GetAverageMusicDurationPerHourPlot(DateTime from, DateTime to)
+        {
+            var musicDurationByHour = GetAverageMusicDurationPerHour(from, to).OrderBy(amdr => amdr.From).ToList();
+            var x = musicDurationByHour.Select(amdr => amdr.MusicPercentage * 100).ToArray();
+            var xMin = musicDurationByHour.Select(amdr => amdr.MusicPercentageMin * 100).ToArray();
+            var xMax = musicDurationByHour.Select(amdr => amdr.MusicPercentageMax * 100).ToArray();
+            var xLabels = musicDurationByHour.Select(amdr => amdr.From.ToString("HH:mm")).ToArray();
+
+            return Plotter.Instance.GetPlot(x: x, xLabels: xLabels, xMin: xMin, xMax: xMax);
+        }
+        #endregion
+
+        #region UniqueSongs
+        public class UniqueSongsResult : TimeSpanResult
+        {
+            public int SongCount { get; set; }
+            public int UniqueSongCount { get; set; }
+            public double UniqueSongPercentage => (double)UniqueSongCount / Math.Max(1, SongCount);
+        }
+        public static UniqueSongsResult GetUniqueSongs(DateTime from, DateTime to)
+        {
+            var fromUnix = Util.UnixTimestamp(from);
+            var toUnix = Util.UnixTimestamp(to);
+
+            using var db = new DatabaseContext();
+            var allSongs = db.Events
+                .Where(e => fromUnix < e.StartTimeUnix && e.StartTimeUnix < toUnix)
+                .Select(e => e.SongId)
+                .ToList();
+            var songCount = allSongs.Count;
+            var uniqueSongCount = allSongs.Distinct().Count();
+
+            return new UniqueSongsResult
+            {
+                From = from,
+                To = to,
+                SongCount = songCount,
+                UniqueSongCount = uniqueSongCount,
+            };
+        }
+        #endregion
+
+        #region MostPlayedSongs
+        public class MostPlayedSongsResult : TimeSpanResult
+        {
+            public int TopK { get; set; }
+            public List<int> Counts { get; set; }
+            public List<Song> Songs { get; set; }
+        }
+        public static MostPlayedSongsResult MostPlayedSongs(DateTime from, DateTime to, int count)
+        {
+            var fromUnix = Util.UnixTimestamp(from);
+            var toUnix = Util.UnixTimestamp(to);
+
+            using var db = new DatabaseContext();
+
+            // get counts
+            var eventsInTimeSpan = db.Events.Where(e => fromUnix < e.StartTimeUnix && e.StartTimeUnix < toUnix).ToList();
+            var counts = eventsInTimeSpan.GroupBy(e => e.SongId);
+
+            // get song objects of topK songs
+            var topKBySongId = counts
+                .OrderByDescending(g => g.Count())
+                .Take(count)
+                .ToList();
+            var songs = db.Songs
+                .Where(s => topKBySongId.Select(group => group.Key).Contains(s.Id))
+                .Include(s => s.Artists)
+                .ToList();
+
+            return new MostPlayedSongsResult
+            {
+                From = from,
+                To = to,
+                TopK = count,
+                Songs = topKBySongId.Select(group => songs.First(s => s.Id == group.Key)).ToList(),
+                Counts = topKBySongId.Select(group => group.Count()).ToList(),
+            };
+        }
+        #endregion
+
+
 
         public static byte[] SongVarietyByHourPlot(DateTime from, DateTime to)
         {
@@ -56,7 +182,6 @@ namespace Backend
 
             return Plotter.Instance.GetPlot(x: values, xLabels: xLabels);
         }
-
         public static List<(DateTime, double)> SongVarietyByHour(DateTime from, DateTime to)
         {
             // calculate frequency of song in timeframe
@@ -137,40 +262,17 @@ namespace Backend
                 .OrderBy(hourVariety => hourVariety.Hour)
                 .ToList();
         }
-
-        public static List<(Song, int)> MostPlayedSongs(DateTime from, DateTime to, int count)
-        {
-            var fromUnix = Util.UnixTimestamp(from);
-            var toUnix = Util.UnixTimestamp(to);
-
-            using var db = new DatabaseContext();
-
-            // get counts
-            var eventsInTimeSpan = db.Events.Where(e => fromUnix < e.StartTimeUnix && e.StartTimeUnix < toUnix).ToList();
-            var counts = eventsInTimeSpan.GroupBy(e => e.SongId);
-
-            // get song objects of topK songs
-            var topKCounts = counts
-                .OrderByDescending(g => g.Count())
-                .Take(count)
-                .Select(g => new { SongId = g.Key, Count = g.Count() })
-                .ToList();
-            var songs = db.Songs
-                .Where(s => topKCounts.Select(songCount => songCount.SongId).Contains(s.Id))
-                .Include(s => s.Artists)
-                .ToList();
-
-            // match song to count
-            return topKCounts.Select(songCount => (songs.First(s => s.Id == songCount.SongId), songCount.Count)).ToList();
-        }
-
         public static byte[] AverageDailySongVarietyByHourPlot(DateTime from, DateTime to)
         {
             var varietyByHour = AverageDailySongVarietyByHour(from, to);
             var xLabels = varietyByHour.Select(vbh => vbh.Item1.ToString("HH:mm")).ToArray();
             var values = varietyByHour.Select(vbh => vbh.Item2).ToArray();
             var stds = varietyByHour.Select(vbh => vbh.Item3).ToArray();
-            return Plotter.Instance.GetPlot(x: values, stds: stds, xLabels: xLabels, width: 12, height: 4, title: $"Durchschnittliche Musikvielfalt per Stunde {from:yyyy}");
+            var xMin = Enumerable.Range(0, values.Length).Select(i => values[i] - stds[i]).ToArray();
+            var xMax = Enumerable.Range(0, values.Length).Select(i => values[i] + stds[i]).ToArray();
+            return Plotter.Instance.GetPlot(x: values, xLabels: xLabels,
+                xMin: xMin, xMax: xMax,
+                width: 12, height: 4, title: $"Durchschnittliche Musikvielfalt per Stunde {from:yyyy}");
         }
         public static List<(DateTime, double, double)> AverageDailySongVarietyByHour(DateTime from, DateTime to)
         {
@@ -198,7 +300,5 @@ namespace Backend
                 .OrderBy(sv => sv.Item1)
                 .ToList();
         }
-
-
     }
 }

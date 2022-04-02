@@ -21,15 +21,14 @@ fig, ax = plt.subplots(figsize=(data["width"], data["height"]))
 
 # plot data
 x = data["x"]
-stds = data["stds"]
+x_min = data["x_min"]
+x_max = data["x_max"]
 if do_bar_plot:
-    plt.bar(range(len(x)), x, zorder=3, yerr=stds)
+    plt.bar(range(len(x)), x, zorder=3, yerr=x - x_min)
 else:
     plt.plot(range(len(x)), x, zorder=3)
-    if stds is not None:
-        lb = [x[i] - stds[i] for i in range(len(x))]
-        ub = [x[i] + stds[i] for i in range(len(x))]
-        plt.fill_between(range(len(x)), lb, ub, alpha=0.3, zorder=3)
+    if x_min is not None and x_max is not None:
+        plt.fill_between(range(len(x)), x_min, x_max, alpha=0.3, zorder=3)
 
 # set x tick labels
 labels = data["xLabels"]
@@ -41,7 +40,7 @@ ax.xaxis.set_minor_locator(MultipleLocator(1))
 plt.xlim(-0.5, len(labels)-0.5)
 
 # set axis limits
-plt.ylim(0, 1.05)
+plt.ylim(0, 100.05)
 
 # set axis labels
 plt.xlabel("Uhrzeit")
